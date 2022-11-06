@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: swagger
+  labels:
+    app: gieze
+    component: swagger
+spec:
+  selector:
+    app: gieze
+    component: swagger
+  clusterIP: None
+  ports:
+  - port: 8080
+    name: swagger
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gieze
+  name: swagger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gieze
+      component: swagger
+  template:
+    metadata:
+      labels:
+        app: gieze
+        component: swagger
+    spec:
+      containers:
+      - image: swaggerapi/swagger-ui
+        name: swagger
+        env:
+          - {name: API_URL, value: '/api/' }

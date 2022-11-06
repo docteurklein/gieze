@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+spec:
+  selector:
+    app: gieze
+    component: nginx
+  clusterIP: None
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    user  nginx;
+    worker_processes  1;
+
+    error_log  /var/log/nginx/error.log warn;
+    pid        /var/run/nginx.pid;
+
+    events {
+        worker_connections  1024;
+    }
+
+
+    http {
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                            '$status $body_bytes_sent "$http_referer" '
+                            '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log  /var/log/nginx/access.log  main;
+
+        sendfile        on;
+        #tcp_nopush     on;
+
+        keepalive_timeout  65;
+
+        #gzip  on;
+
+      server {
+        listen       80;
+        server_name  localhost;
+
+        add_header Content-Security-Policy "script-src 'self' 'unsafe-eval' https://unpkg.com;" always;
+        add_header Content-Security-Policy "style-src 'self' https://unpkg.com;" always;
+
+        location /api/ {
+          default_type  application/json;
+          proxy_hide_header Content-Location;
+          add_header Content-Location  /api/$upstream_http_content_location;
+          proxy_set_header  Connection "";
+          proxy_http_version 1.1;
+          proxy_pass http://postgrest:3000/;
+        }
+
+        location /swagger/ {
+          proxy_set_header  Connection "";
+          proxy_http_version 1.1;
+          proxy_pass http://swagger:8080/;
+        }
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+
+      }
+    }
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gieze
+    component: nginx
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gieze
+      component: nginx
+  template:
+    metadata:
+      labels:
+        app: gieze
+        component: nginx
+    spec:
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+        - name: public
+          hostPath:
+            path: /home/florian/work/gieze/nginx/public
+            type: Directory
+      containers:
+      - image: nginx
+        name: nginx
+        volumeMounts:
+         - name: public
+           mountPath: /usr/share/nginx/html
+         - name: nginx-config
+           mountPath: /etc/nginx/nginx.conf
+           subPath: nginx.conf
+

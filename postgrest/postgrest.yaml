@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgrest
+  labels:
+    app: gieze
+    component: postgrest
+spec:
+  selector:
+    app: gieze
+    component: postgrest
+  clusterIP: None
+  ports:
+  - port: 3000
+    name: postgrest
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gieze
+  name: postgrest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gieze
+      component: postgrest
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: gieze
+        component: postgrest
+    spec:
+      containers:
+      - image: postgrest/postgrest
+        name: postgrest
+        env:
+          - {name: PGRST_DB_URI, value: 'postgres://app:ugEPIvG5TqjECqL5ohNhTh5pT0fW3ReeXiifLbMS8iYcbt7yhM26qgYIG8qXRaff@gieze-rw:5432/app' }
+          - {name: PGRST_DB_ANON_ROLE, value: 'anonymous' }
+          - {name: PGRST_DB_SCHEMAS, value: 'gieze' }
+          - {name: PGRST_RAW_MEDIA_TYPES, value: 'text/html' }
+          - {name: PGRST_OPENAPI_MODE, value: 'ignore-privileges' }
+          - {name: PGRST_OPENAPI_SERVER_PROXY_URI, value: 'http://0.0.0.0:8080/api/' }

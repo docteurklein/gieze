@@ -1,0 +1,15 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: gieze
+spec:
+  instances: 1
+  storage:
+    size: 10Gi
+  #bootstrap:
+  #  initdb:
+  #    postInitApplicationSQLRefs:
+  #      configMapRefs:
+  #      - name: gieze-schema
+  #        key: schema.sql
+
