@@ -2,12 +2,18 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="/index.css">
     <link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
+    <link rel="stylesheet" href="/index.css">
     <script async type="module" src="/index.js"></script>
   </head>
   <body>
     <h1>La Gièze</h1>
+    <form><input type="password" id="auth" placeholder="password please"><input type="submit" value="login"/></form>
+    <a href="/admin.html">admin</a>
+
+    <hr/>
+    <h2>TODO</h2>
+    <ul data-fetch="/api/todo" data-map="todo"></ul> 
 
     <datalist data-fetch="/api/client" data-key="client" id="clients_list">
     </datalist>
@@ -15,22 +21,26 @@
     <datalist data-fetch="/api/product" data-key="product" id="products_list">
     </datalist>
 
+    <hr/>
     <h2>Bons de livraison</h2>
-
-    <form method="POST" action="/api/bl">
+    <form data-fetch method="POST" action="/api/bl">
       <input type="number" name="bl" placeholder="numéro" />
       <input type="text" name="client" list="clients_list" placeholder="client" />
       <input type="submit" />
     </form>
 
     <div class="bls" data-fetch="/api/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
+    <hr/>
+    <details>
+	<summary>BLs livrés</summary>
+	<div class="bls" data-fetch="/api/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div> 
+    </details>
 
-    <h2>Future factures</h2>
-    <div data-fetch="/api/future_invoice" data-map="future_invoices"></div> 
+    <h2>Futures factures</h2>
+    <div class="invoices" data-fetch="/api/future_invoice" data-map="future_invoices"></div> 
 
     <h2>Historique des factures</h2>
-    <div data-fetch="/api/invoice" data-map="_"></div> 
+    <div class="invoices" data-fetch="/api/invoice?select=*,invoice_line(*)&order=invoice.desc" data-map="invoices"></div> 
 
   </body>
 </html>
-

@@ -38,9 +38,18 @@ spec:
       - image: postgrest/postgrest
         name: postgrest
         env:
-          - {name: PGRST_DB_URI, value: 'postgres://app:ugEPIvG5TqjECqL5ohNhTh5pT0fW3ReeXiifLbMS8iYcbt7yhM26qgYIG8qXRaff@gieze-rw:5432/app' }
+          - {name: PGRST_DB_URI, value: 'postgres://app@gieze-rw:5432/app' }
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: gieze-app
+                key: password
+          - name: PGRST_JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: postgrest-jwt-secret
+                key: secret
           - {name: PGRST_DB_ANON_ROLE, value: 'anonymous' }
           - {name: PGRST_DB_SCHEMAS, value: 'gieze' }
-          - {name: PGRST_RAW_MEDIA_TYPES, value: 'text/html' }
           - {name: PGRST_OPENAPI_MODE, value: 'ignore-privileges' }
           - {name: PGRST_OPENAPI_SERVER_PROXY_URI, value: 'http://0.0.0.0:8080/api/' }

@@ -3,12 +3,12 @@ begin;
 set local search_path to gieze;
 
 insert into client values
-('maison du sichon'),
-('bio coop');
+('maison du sichon', '1 rue du sichon'),
+('bio coop', '1 rue de la coop');
 
 insert into product values
-('grand duc'),
-('crotte de fée');
+('grand duc', (3.25, 'EUR')::money.amount, 0.055),
+('crotte de fée', (1.50, 'EUR')::money.amount, 0.055);
 
 insert into bl values
 (1, 'maison du sichon', now() - interval '1 month', now()),

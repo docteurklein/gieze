@@ -1,38 +1,131 @@
+
+do $$ begin
+create role admin;
+exception when duplicate_object then raise notice '%, skipping', sqlerrm using errcode = sqlstate;
+end $$;
+
 begin;
 
 create schema gieze;
-grant usage on schema gieze to anonymous;
+create schema money;
+grant usage on schema gieze to admin;
+grant usage on schema money to admin;
 
-grant anonymous to app;
+grant admin to app;
 
 create extension pg_trgm with schema gieze;
 
 set local search_path to gieze;
 
-create table client (
-  client text not null primary key
+create type money._amount as (
+  amount numeric(6, 3),
+  currency text
 );
 
-grant all on table client to anonymous;
+create domain money.amount as money._amount
+constraint valid check (
+      (value).amount is not null
+  and (value).currency is not null
+);
+
+create function money.sum_amount(a money.amount, b money.amount) returns money.amount
+language sql
+immutable
+parallel safe
+as $$
+select (
+  (a).amount + (b).amount,
+  (b).currency
+)::money.amount
+$$;
+
+create aggregate money.sum(money.amount)
+(
+  sfunc = money.sum_amount,
+  stype = money.amount,
+  initcond = '(0, null)'
+);
+
+create function money.multiply(a money.amount, rate numeric) returns money.amount
+language sql
+immutable
+parallel safe
+as $$
+select (
+  (a).amount * rate,
+  (a).currency
+)::money.amount
+$$;
+
+create operator * (
+  leftarg = money.amount,
+  rightarg = numeric,
+  function = money.multiply
+);
+
+create function money.substract(a money.amount, b money.amount) returns money.amount
+language sql
+immutable
+parallel safe
+as $$
+select (
+  (a).amount - (b).amount,
+  (a).currency
+)::money.amount
+$$;
+
+create operator - (
+  leftarg = money.amount,
+  rightarg = money.amount,
+  function = money.substract
+);
+
+create function money.add(a money.amount, b money.amount) returns money.amount
+language sql
+immutable
+parallel safe
+as $$
+select (
+  (a).amount + (b).amount,
+  (a).currency
+)::money.amount
+$$;
+
+create operator + (
+  leftarg = money.amount,
+  rightarg = money.amount,
+  function = money.add
+);
+
+create table client (
+  client text not null primary key,
+  billing_address text not null,
+  shipping_address text default null
+);
+
+grant all on table client to admin;
 
 create index client_trgm
 on client
 using gin (client gin_trgm_ops);
 
 create table product (
-  product text not null primary key
+  product text not null primary key,
+  unit_price_ht money.amount not null,
+  tva_rate numeric(5, 5) not null
 );
 
-grant all on table product to anonymous;
+grant all on table product to admin;
 
 create table bl (
   bl bigint not null primary key,
   client text not null references client (client),
   inserted_at timestamptz not null default now(),
-  shipped_at timestamptz
+  shipped_at date,
+  invoiced boolean default false
 );
 
-grant all on table bl to anonymous;
+grant all on table bl to admin;
 
 create table bl_line (
   bl bigint not null references bl (bl),
@@ -41,111 +134,123 @@ create table bl_line (
   primary key (bl, product)
 );
 
-grant all on table bl_line to anonymous;
-
-create view future_invoice(client, month, lines) as
-with agg_line(client, quantity, product, month) as (
-  select client, sum(quantity), product, date_trunc('month', shipped_at) from bl_line join bl using (bl) where shipped_at is not null group by client, product, 4
-)
-select client, to_char(to_date(date_part('month', shipped_at)::text, 'MM'), 'Month'), array_agg(row_to_json(agg_line))
-from client
-join bl using (client)
-join agg_line using (client)
-where shipped_at is not null
-and agg_line.month = date_trunc('month', shipped_at)
-group by 1, 2, date_trunc('month', shipped_at)
-order by date_trunc('month', shipped_at) asc;
-
-grant select on future_invoice to anonymous;
+grant all on table bl_line to admin;
 
 create table invoice (
   invoice bigint not null primary key,
-  client text not null
+  client text not null,
+  address text not null,
+  client_address text not null,
+  invoiced_at timestamptz not null,
+  deadline_at timestamptz not null,
+  total_ht money.amount not null,
+  total_tva money.amount not null,
+  total_ttc money.amount not null,
+  month date,
+  bank_info text not null,
+  legal_infos text not null,
+  footer text default null,
+  unique (client, month)
 );
 
-grant all on table invoice to anonymous;
+grant all on table invoice to admin;
+
 
 create table invoice_line (
   invoice bigint not null references invoice (invoice),
   product text not null,
   quantity bigint not null check (quantity > 0),
-  primary key (invoice, product)
+  unit_price_ht money.amount not null,
+  total_price_ht money.amount not null,
+  tva_rate numeric(5, 5) not null,
+  total_tva money.amount not null,
+  total_price_ttc money.amount not null
 );
 
-grant all on table invoice_line to anonymous;
+grant all on table invoice_line to admin;
 
-create view todo(quantity, product) as
-select sum(quantity), product
+create view future_invoice_line(client, month, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc) as
+select
+  client,
+  date_trunc('month', shipped_at)::date,
+  product,
+  quantity,
+  unit_price_ht,
+  unit_price_ht * quantity,
+  tva_rate,
+  (unit_price_ht * quantity) * tva_rate,
+  (unit_price_ht * quantity) * (1 + tva_rate)
+from bl_line
+join bl using (bl)
+join product using (product)
+where shipped_at is not null;
+
+grant select on future_invoice_line to admin;
+
+create view future_invoice(client, month, total_ht, total_tva, total_ttc) as
+select client, date_trunc('month', shipped_at)::date, money.sum(total_price_ht), money.sum(total_tva), money.sum(total_price_ttc)
+from client
+join bl using (client)
+join future_invoice_line using (client)
+where shipped_at is not null
+and not bl.invoiced
+and future_invoice_line.month = date_trunc('month', shipped_at)::date
+group by 1, 2
+order by 2 asc, 1 asc;
+
+grant select on future_invoice to admin;
+
+create view todo(quantity, product, client) as
+select sum(quantity), product, client
 from bl_line
 join bl using (bl)
 where bl.shipped_at is null
-group by product;
+group by product, client;
 
-grant select on todo to anonymous;
+grant select on todo to admin;
 
--- create or replace function he(html text) returns text
--- language sql strict immutable
--- as $$
---     select replace(replace(replace(replace(replace(html, '&', '&amp;'), '''', '&#39;'), '"', '&quot;'), '>', '&gt;'), '<', '&lt;')
--- $$;
--- 
--- create or replace function "index.html"() returns text
--- language sql strict stable
--- set search_path to gieze
--- as $$
--- with bl_trs as (select string_agg(format('<tr><td>%s</td><td>%s</td><td>%s</td></tr>', he(bl.bl::text), he(bl.client), ''), '') bls from bl left join bl_line using (bl) group by bl, client),
--- todo_trs as (select string_agg(format('<tr><td>%s</td><td>%s</td></tr>', he(quantity::text), he(product)), '') todo_trs from todo),
--- next_bl(next_bl) as (select max(bl) + 1 from bl),
--- future_invoices as (select string_agg(format('<tr><td>%s</td><td>%s</td><td><a href="/rpc/invoice.html?invoice=%s">Générer</a></td></tr>', he(invoice.client), he(invoice.products), invoice.client), '') future_invoices from future_invoice invoice),
--- invoice_trs as (select string_agg(format('<tr><td>%s</td><td>%s</td><td><a href="/rpc/invoice.html?invoice=%s</td></tr>', he(invoice.invoice::text), he(invoice.client), invoice.invoice::text), '') invoices from invoice),
--- client_options as (select string_agg(format('<option>%s</option>', he(client)), '') clients from client),
--- product_options as (select string_agg(format('<option>%s</option>', he(product)), '') products from product)
--- select format($html$
--- <html>
---   <head>
---     <link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
---     <script async src="https://unpkg.com/htmx.org@1.8.2/dist/htmx.js"></script>
---     <script async src="https://unpkg.com/htmx.org/dist/ext/client-side-templates.js"></script>
---     <script async src="https://unpkg.com/mustache@latest"></script>
---     <meta charset="utf-8">
---   </head>
---   <body hx-ext="client-side-templates">
---     <h1>La Gièze</h1>
---     <h2>Bons de livraison</h2>
---     <form method="POST" action="/bl" hx-post="/bl" hx-target="#bl-result">
---       <input type="number" name="bl" value="%s" />
---       <datalist id="clients">
--- 	%s
---       </datalist>
---       <input type="text" name="client" list="clients" />
---       <datalist id="products">
--- 	%s
---       </datalist>
---       <input type="submit" />
---     </form>
---     <div id="bl-result"></div>
--- 
---     <template id="foo">
---       <p> and  and </> htmx - high power tools for html and </p>
---     </template>
---     <table>
---      %s
---     </table> 
---     <h2>TODO</h2>
---     <table>
---      %s
---     </table> 
---     <h2>Future factures</h2>
---     <table>
---      %s
---     </table> 
---     <h2>Factures</h2>
---     <table>
---      %s
---     </table> 
---   </body>
--- </html>
--- $html$, next_bl, clients, products, bls, todo_trs, future_invoices, invoices) from next_bl, client_options, product_options, bl_trs, todo_trs, future_invoices, invoice_trs;
--- $$;
+create or replace function invoice(client_ text, month_ date) -- should be proc, but postgrest meh
+returns void as $$
+  set transaction isolation level serializable;
+  with fil as (
+    select fi.client, fi.month, fi.total_ht, fi.total_tva, fi.total_ttc, fil.product, fil.quantity
+    from gieze.future_invoice fi
+    join gieze.future_invoice_line fil using (client, month)
+    where fi.client = client_
+    and fi.month = month_
+  ),
+  new_invoice as (
+    insert into gieze.invoice(invoice, client, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) select
+      (select coalesce(max(invoice) + 1, 1) from gieze.invoice),
+      (select client from gieze.client where client = client_), -- not a FK so check manually
+      month_,
+      now(),
+      now() + interval '1 month',
+      fil.total_ht,
+      fil.total_tva,
+      fil.total_ttc,
+      'bank info',
+      'legal infos'
+    from fil
+    returning client, month, invoice
+  )
+  insert into gieze.invoice_line(invoice, product, quantity)
+  select ni.invoice, fil.product, fil.quantity
+  from new_invoice ni
+  join fil using (client, month);
+
+  update bl set invoiced = true
+  where date_trunc('month', shipped_at)::date = month_
+  and client = client_
+  and shipped_at is not null;
+$$ language sql;
+
+grant execute on function invoice to admin;
+
+create or replace function he(html text) returns text
+language sql strict immutable
+as $$
+    select replace(replace(replace(replace(replace(html, '&', '&amp;'), '''', '&#39;'), '"', '&quot;'), '>', '&gt;'), '<', '&lt;')
+$$;
 
 commit;

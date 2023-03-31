@@ -1,0 +1,17 @@
+- make shipped BLs non-editable
+- client:
+ - telephone
+ - adresse de facturation
+ - adresse de livrasion
+produit:
+ - price
+ - 
+
+invoice: 
+  - groupb by bl:
+    - numero
+    - date de livraison
+    - keep detail of each BL
+    - footer
+    - include address in footer?
+    
