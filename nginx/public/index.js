@@ -6,13 +6,13 @@ let map = {
     ${new Intl.DateTimeFormat().format(new Date(bl.inserted_at))}
     ${bl.client}
     ${bl.bl_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="/api/bl_line" data-upsert>
+    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co//bl_line" data-upsert>
       <input type="hidden" name="bl" value="${bl.bl}" />
       <input type="text" name="product" list="products_list" placeholder="product" />
       <input type="number" name="quantity" placeholder="quantity" />
       <input type="submit" />
     </form>
-    <form data-fetch data-method="PATCH" action="/api/bl?bl=eq.${bl.bl}">
+    <form data-fetch data-method="PATCH" action="https://gxusbjyqxzhewnzyecur.supabase.co//bl?bl=eq.${bl.bl}">
       <input type="date" name="shipped_at" placeholder="shipped at" value=${bl.shipped_at} />
       <input type="submit" value="Mark as shipped" />
     </form>
@@ -21,7 +21,7 @@ let map = {
     <h3>#${invoice.client}</h3>
     ${invoice.month}
     ${invoice.lines.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="/api/rpc/invoice">
+    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co//rpc/invoice">
       <input type="hidden" name="client_" value="${invoice.client}"/>
       <input type="hidden" name="month_" value="${invoice.month}"/>
       <input type="submit" value="Invoice!" />
