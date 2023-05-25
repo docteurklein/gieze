@@ -37,7 +37,7 @@
     </details>
 
     <h2>Futures factures</h2>
-    <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/future_invoice" data-map="future_invoices"></div> 
+    <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/future_invoice?select=*,future_invoice_line(*)" data-map="future_invoices"></div> 
 
     <h2>Historique des factures</h2>
     <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/invoice?select=*,invoice_line(*)&order=invoice.desc" data-map="invoices"></div> 

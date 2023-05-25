@@ -20,7 +20,7 @@ let map = {
   future_invoices: invoices => invoices.map(invoice => html`<card class="invoice">
     <h3>#${invoice.client}</h3>
     ${invoice.month}
-    ${invoice.lines.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
+    ${invoice.future_invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
     <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/rpc/invoice">
       <input type="hidden" name="client_" value="${invoice.client}"/>
       <input type="hidden" name="month_" value="${invoice.month}"/>
