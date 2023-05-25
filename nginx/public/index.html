@@ -13,34 +13,34 @@
 
     <hr/>
     <h2>TODO</h2>
-    <ul data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/todo" data-map="todo"></ul> 
+    <ul data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/todo" data-map="todo"></ul> 
 
-    <datalist data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/client" data-key="client" id="clients_list">
+    <datalist data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/client" data-key="client" id="clients_list">
     </datalist>
 
-    <datalist data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/product" data-key="product" id="products_list">
+    <datalist data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/product" data-key="product" id="products_list">
     </datalist>
 
     <hr/>
     <h2>Bons de livraison</h2>
-    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co//bl">
+    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/bl">
       <input type="number" name="bl" placeholder="numéro" />
       <input type="text" name="client" list="clients_list" placeholder="client" />
       <input type="submit" />
     </form>
 
-    <div class="bls" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co//bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
+    <div class="bls" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
     <hr/>
     <details>
 	<summary>BLs livrés</summary>
-	<div class="bls" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co//bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div> 
+	<div class="bls" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div> 
     </details>
 
     <h2>Futures factures</h2>
-    <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co//future_invoice" data-map="future_invoices"></div> 
+    <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/future_invoice" data-map="future_invoices"></div> 
 
     <h2>Historique des factures</h2>
-    <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co//invoice?select=*,invoice_line(*)&order=invoice.desc" data-map="invoices"></div> 
+    <div class="invoices" data-fetch="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/invoice?select=*,invoice_line(*)&order=invoice.desc" data-map="invoices"></div> 
 
   </body>
 </html>

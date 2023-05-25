@@ -6,13 +6,13 @@ let map = {
     ${new Intl.DateTimeFormat().format(new Date(bl.inserted_at))}
     ${bl.client}
     ${bl.bl_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co/bl_line" data-upsert>
+    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/bl_line" data-upsert>
       <input type="hidden" name="bl" value="${bl.bl}" />
       <input type="text" name="product" list="products_list" placeholder="product" />
       <input type="number" name="quantity" placeholder="quantity" />
       <input type="submit" />
     </form>
-    <form data-fetch data-method="PATCH" action="https://gxusbjyqxzhewnzyecur.supabase.co/bl?bl=eq.${bl.bl}">
+    <form data-fetch data-method="PATCH" action="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/bl?bl=eq.${bl.bl}">
       <input type="date" name="shipped_at" placeholder="shipped at" value=${bl.shipped_at} />
       <input type="submit" value="Mark as shipped" />
     </form>
@@ -21,7 +21,7 @@ let map = {
     <h3>#${invoice.client}</h3>
     ${invoice.month}
     ${invoice.lines.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co/rpc/invoice">
+    <form data-fetch method="POST" action="https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1/rpc/invoice">
       <input type="hidden" name="client_" value="${invoice.client}"/>
       <input type="hidden" name="month_" value="${invoice.month}"/>
       <input type="submit" value="Invoice!" />
@@ -101,12 +101,26 @@ function interpolate(template, params) {
 
 function setup(root) {
   root.querySelectorAll('[data-fetch][data-map]').forEach(async e => {
-    let values = await (await fetch(e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
+    let values = await (await fetch(e.getAttribute('data-fetch'), {
+        headers: {
+            authorization: `bearer ${localStorage.getItem('auth')}`,
+            apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4dXNianlxeHpoZXduenllY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njc0MjAyNzYsImV4cCI6MTk4Mjk5NjI3Nn0.55SXH7OoAt-7wpyIjJkj6OjqPcU4B3aCFYEoev76Ym8',
+            'accept-profile': 'gieze',
+            'content-profile': 'gieze',
+        }
+    })).json();
     render(map[e.getAttribute('data-map')](values), e);
     setup(e);
   });
   root.querySelectorAll('datalist[data-fetch][data-key]').forEach(async e => {
-    let values = await (await fetch(e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
+    let values = await (await fetch(e.getAttribute('data-fetch'), {
+        headers: {
+            authorization: `bearer ${localStorage.getItem('auth')}`,
+            apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4dXNianlxeHpoZXduenllY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njc0MjAyNzYsImV4cCI6MTk4Mjk5NjI3Nn0.55SXH7OoAt-7wpyIjJkj6OjqPcU4B3aCFYEoev76Ym8',
+            'accept-profile': 'gieze',
+            'content-profile': 'gieze',
+        }
+    })).json();
     values.forEach(value => {
       let option = document.createElement('option');
       option.value = value[e.getAttribute('data-key')];
@@ -120,11 +134,18 @@ function setup(root) {
     event.preventDefault();
     const data = new FormData(event.target);
     const values = Object.fromEntries(data.entries());
-    let res = await fetch(event.target.action, {method: event.target.getAttribute('data-method') || event.target.method, headers: {
-      'Content-Type': 'application/json',
-      'Prefer': event.target.hasAttribute('data-upsert') ? 'resolution=merge-duplicates' : '',
-      authorization: `bearer ${localStorage.getItem('auth')}`,
-    }, body: JSON.stringify(values)});
+    let res = await fetch(event.target.action, {
+        method: event.target.getAttribute('data-method') || event.target.method,
+        headers: {
+            'Content-Type': 'application/json',
+            'accept-profile': 'gieze',
+            'content-profile': 'gieze',
+            'Prefer': event.target.hasAttribute('data-upsert') ? 'resolution=merge-duplicates' : '',
+            authorization: `bearer ${localStorage.getItem('auth')}`,
+            apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4dXNianlxeHpoZXduenllY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njc0MjAyNzYsImV4cCI6MTk4Mjk5NjI3Nn0.55SXH7OoAt-7wpyIjJkj6OjqPcU4B3aCFYEoev76Ym8',
+        },
+        body: JSON.stringify(values)
+    });
     res.ok && window.location.reload();
     res.json().then(body => event.target.append(body.details || body.message || ''));
   });
