@@ -61,17 +61,31 @@ let map = {
   },
   'admin-clients': clients => {
     if (clients.length == 0) return html`No client yet`;
-    return clients.map(client => html`<li>
-      ${client.client}
-      ${client.billing_address}
-      ${client.shipping_address}
-    </li>`);
+    return clients.map(client => html`
+      <form data-fetch method="POST" action="/client" data-upsert>
+        <input type="text" name="client" list="clients_list" placeholder="client" value="${client.client}" />
+        <input type="text" name="billing_address" placeholder="Addresse de facturation" value="${client.billing_address}" />
+        <input type="text" name="shipping_address" placeholder="Addresse de livraison" value="${client.shipping_address}" />
+        <input type="submit" value="Editer" />
+      </form>
+      <form data-fetch data-method="DELETE" action="/client?client=eq.${client.client}">
+        <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
+      </form>
+    `);
   },
   'admin-products': values => {
     if (values.length == 0) return html`No product yet`;
-    return values.map(value => html`<li>
-      ${value.product}
-    </li>`);
+    return values.map(value => html`
+      <form data-fetch method="POST" action="/product" data-upsert>
+        <input type="text" name="product" list="products_list" placeholder="product" value="${value.product}" />
+        <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" value="(${`${value.unit_price_ht.amount}, '${value.unit_price_ht.currency}')`}" />
+        <input type="text" name="tva_rate" placeholder="Taux TVA" value="${value.tva_rate}" />
+        <input type="submit" value="Editer" />
+      </form>
+      <form data-fetch data-method="DELETE" action="/product?product=eq.${value.product}">
+        <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
+      </form>
+    `);
   },
   _: values => values.map(value => html`<div>${JSON.stringify(value)}</div>`),
 };
@@ -140,14 +154,19 @@ function setup(root) {
     event.preventDefault();
     const data = new FormData(event.target);
     const values = Object.fromEntries(data.entries());
-    let res = await fetch(baseUrl + event.target.getAttribute('action'), {method: event.target.getAttribute('data-method') || event.target.method, headers: {
-      'Content-Type': 'application/json',
-      'Prefer': event.target.hasAttribute('data-upsert') ? 'resolution=merge-duplicates' : '',
-      authorization: `bearer ${localStorage.getItem('auth')}`,
-      apikey: apikey,
-      'Accept-Profile': 'gieze',
-      'Content-Profile': 'gieze',
-    }, body: JSON.stringify(values)});
+    let method = event.target.getAttribute('data-method') || event.target.method;
+    let res = await fetch(baseUrl + event.target.getAttribute('action'), {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Prefer': event.target.hasAttribute('data-upsert') ? 'resolution=merge-duplicates' : '',
+        authorization: `bearer ${localStorage.getItem('auth')}`,
+        apikey: apikey,
+        'Accept-Profile': 'gieze',
+        'Content-Profile': 'gieze',
+      },
+      body: ['post', 'put', 'patch'].includes(method.toLowerCase()) ? JSON.stringify(values) : null
+    });
     res.ok && window.location.reload();
     res.json().then(body => event.target.append(body.details || body.message || ''));
   });

@@ -24,14 +24,16 @@
       <input type="text" name="shipping_address" placeholder="shipping address" />
       <input type="submit" value="Add" />
     </form>
-    <ul data-fetch="/client" data-map="admin-clients"></ul> 
+    <div class="admin line-client" data-fetch="/client" data-map="admin-clients"></div> 
     <hr/>
 
     <h2>produits</h2>
     <form data-fetch method="POST" action="/product">
       <input type="text" name="product" list="products_list" placeholder="product" />
+      <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" />
+      <input type="text" name="tva_rate" placeholder="Taux TVA" />
       <input type="submit" value="Add" />
     </form>
-    <ul data-fetch="/product" data-map="admin-products"></ul> 
+    <div data-fetch="/product" data-map="admin-products"></div>
   </body>
 </html>
