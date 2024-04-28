@@ -130,8 +130,11 @@ async function fetchjson(url) {
 
 function setup(root) {
   if ('auth' in window) {
-    auth.addEventListener('change', (event) => {
-      localStorage.setItem('auth', event.target.value);
+    window.auth.addEventListener('submit', (event) => {
+      const data = new FormData(event.target);
+      localStorage.setItem('auth', data.get('password'));
+      event.preventDefault();
+      window.location.reload();
     });
   }
   root.querySelectorAll('[data-fetch][data-map]').forEach(async e => {
