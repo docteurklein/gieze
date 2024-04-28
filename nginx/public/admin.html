@@ -11,27 +11,27 @@
     <form><input type="password" id="auth" placeholder="password please"><input type="submit" value="login"/></form>
     <a href="/">index</a>
 
-    <datalist data-fetch="/api/client" data-key="client" id="clients_list">
+    <datalist data-fetch="/client" data-key="client" id="clients_list">
     </datalist>
 
-    <datalist data-fetch="/api/product" data-key="product" id="products_list">
+    <datalist data-fetch="/product" data-key="product" id="products_list">
     </datalist>
 
     <h2>clients</h2>
-    <form data-fetch method="POST" action="/api/client" data-upsert>
+    <form data-fetch method="POST" action="/client" data-upsert>
       <input type="text" name="client" list="clients_list" placeholder="client" />
       <input type="text" name="billing_address" placeholder="billing address" />
       <input type="text" name="shipping_address" placeholder="shipping address" />
       <input type="submit" value="Add" />
     </form>
-    <ul data-fetch="/api/client" data-map="admin-clients"></ul> 
+    <ul data-fetch="/client" data-map="admin-clients"></ul> 
     <hr/>
 
     <h2>produits</h2>
-    <form data-fetch method="POST" action="/api/product">
+    <form data-fetch method="POST" action="/product">
       <input type="text" name="product" list="products_list" placeholder="product" />
       <input type="submit" value="Add" />
     </form>
-    <ul data-fetch="/api/product" data-map="admin-products"></ul> 
+    <ul data-fetch="/product" data-map="admin-products"></ul> 
   </body>
 </html>

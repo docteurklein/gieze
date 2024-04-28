@@ -6,13 +6,13 @@ let map = {
     ${new Intl.DateTimeFormat().format(new Date(bl.inserted_at))}
     ${bl.client}
     ${bl.bl_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="/api/bl_line" data-upsert>
+    <form data-fetch method="POST" action="/bl_line" data-upsert>
       <input type="hidden" name="bl" value="${bl.bl}" />
       <input type="text" name="product" list="products_list" placeholder="product" />
       <input type="number" name="quantity" placeholder="quantity" />
       <input type="submit" />
     </form>
-    <form data-fetch data-method="PATCH" action="/api/bl?bl=eq.${bl.bl}">
+    <form data-fetch data-method="PATCH" action="/bl?bl=eq.${bl.bl}">
       <input type="date" name="shipped_at" placeholder="shipped at" value=${bl.shipped_at} />
       <input type="submit" value="Mark as shipped" />
     </form>
@@ -21,7 +21,7 @@ let map = {
     <h3>#${invoice.client}</h3>
     ${invoice.month}
     ${invoice.lines.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="/api/rpc/invoice">
+    <form data-fetch method="POST" action="/rpc/invoice">
       <input type="hidden" name="client_" value="${invoice.client}"/>
       <input type="hidden" name="month_" value="${invoice.month}"/>
       <input type="submit" value="Invoice!" />
@@ -34,16 +34,16 @@ let map = {
     ${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
     <iframe srcdoc="${(template_as_string(html`<!DOCTYPE html>
       <html>
-	<head>
-	<meta charset="utf-8">
-	<link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
-	<link rel="stylesheet" href="/index.css">
-	</head>
-	<body>
-	<img src="http://0.0.0.0:8080/images/logo-gieze.png"/>
-        <h1>${invoice.client} #${invoice.invoice}</h1>
-	${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-	</body>
+      	<head>
+        	<meta charset="utf-8">
+        	<link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
+        	<link rel="stylesheet" href="/index.css">
+      	</head>
+      	<body>
+        	<img src="/images/logo-gieze.png"/>
+          <h1>${invoice.client} #${invoice.invoice}</h1>
+        	${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
+      	</body>
       </html>
     `, invoice))}"></iframe>
   </card>`),
@@ -106,12 +106,12 @@ function setup(root) {
     });
   }
   root.querySelectorAll('[data-fetch][data-map]').forEach(async e => {
-    let values = await (await fetch(e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
+    let values = await (await fetch('https://gxusbjyqxzhewnzyecur.supabase.co/'+ e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
     render(map[e.getAttribute('data-map')](values), e);
     setup(e);
   });
   root.querySelectorAll('datalist[data-fetch][data-key]').forEach(async e => {
-    let values = await (await fetch(e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
+    let values = await (await fetch('https://gxusbjyqxzhewnzyecur.supabase.co/'+ e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
     values.forEach(value => {
       let option = document.createElement('option');
       option.value = value[e.getAttribute('data-key')];
