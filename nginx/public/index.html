@@ -26,19 +26,21 @@
     <form data-fetch method="POST" action="/bl">
       <input type="number" name="bl" placeholder="numéro" />
       <input type="text" name="client" list="clients_list" placeholder="client" />
-      <input type="submit" />
+      <input type="submit" value="Ajouter un nouveau BL" />
     </form>
 
     <div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
     <hr/>
     <details>
-	<summary>BLs livrés</summary>
-	<div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div> 
+  	<summary>BLs livrés</summary>
+    	<div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div>
     </details>
+    <hr/>
 
     <h2>Futures factures</h2>
     <div class="invoices" data-fetch="/future_invoice?select=*,future_invoice_line(*)" data-map="future_invoices"></div> 
 
+    <hr/>
     <h2>Historique des factures</h2>
     <div class="invoices" data-fetch="/invoice?select=*,invoice_line(*)&order=invoice.desc" data-map="invoices"></div> 
 

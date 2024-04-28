@@ -13,11 +13,11 @@ let map = {
       <input type="hidden" name="bl" value="${bl.bl}" />
       <input type="text" name="product" list="products_list" placeholder="product" />
       <input type="number" name="quantity" placeholder="quantity" />
-      <input type="submit" />
+      <input type="submit" value="Ajouter" />
     </form>
     <form data-fetch data-method="PATCH" action="/bl?bl=eq.${bl.bl}">
       <input type="date" name="shipped_at" placeholder="shipped at" value=${bl.shipped_at} />
-      <input type="submit" value="Mark as shipped" />
+      <input type="submit" value="Livrer" />
     </form>
   </card>`),
   future_invoices: invoices => invoices.map(invoice => html`<card class="invoice">
@@ -27,14 +27,15 @@ let map = {
     <form data-fetch method="POST" action="/rpc/invoice">
       <input type="hidden" name="client_" value="${invoice.client}"/>
       <input type="hidden" name="month_" value="${invoice.month}"/>
-      <input type="submit" value="Invoice!" />
+      <input type="submit" value="Facturer" />
     </form>
   </card>`),
   invoices: invoices => invoices.map(invoice => html`<card class="invoice">
     <h3>#${invoice.invoice}</h3>
-    for month ${invoice.month}
-    ${invoice.invoiced_at}
-    ${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
+    for month ${invoice.month}<br/>
+    <p>
+      ${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
+    </p>
     <iframe srcdoc="${(template_as_string(html`<!DOCTYPE html>
       <html>
       	<head>
