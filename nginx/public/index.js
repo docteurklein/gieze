@@ -1,5 +1,8 @@
 import {html, render} from '/vendor/lit-html.js';
 
+let baseUrl = 'https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1';
+let apikey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4dXNianlxeHpoZXduenllY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njc0MjAyNzYsImV4cCI6MTk4Mjk5NjI3Nn0.55SXH7OoAt-7wpyIjJkj6OjqPcU4B3aCFYEoev76Ym8';
+
 let map = {
   bls: bls => bls.map(bl => html`<card class="bl">
     <h3>#${bl.bl}</h3>
@@ -20,7 +23,7 @@ let map = {
   future_invoices: invoices => invoices.map(invoice => html`<card class="invoice">
     <h3>#${invoice.client}</h3>
     ${invoice.month}
-    ${invoice.lines.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
+    ${invoice.future_invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
     <form data-fetch method="POST" action="/rpc/invoice">
       <input type="hidden" name="client_" value="${invoice.client}"/>
       <input type="hidden" name="month_" value="${invoice.month}"/>
@@ -99,6 +102,17 @@ function interpolate(template, params) {
   return new Function(...keys, `return html\`${template}\``)(...keyVals);
 }
 
+async function fetchjson(url) {
+  return (await fetch(baseUrl + url, {
+    headers: {
+      authorization: `Bearer ${localStorage.getItem('auth')}`,
+      apikey: apikey,
+      'Accept-Profile': 'gieze',
+      'Content-Profile': 'gieze',
+    }
+  })).json();
+}
+
 function setup(root) {
   if ('auth' in window) {
     auth.addEventListener('change', (event) => {
@@ -106,12 +120,12 @@ function setup(root) {
     });
   }
   root.querySelectorAll('[data-fetch][data-map]').forEach(async e => {
-    let values = await (await fetch('https://gxusbjyqxzhewnzyecur.supabase.co/'+ e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
+    let values = await fetchjson(e.getAttribute('data-fetch'));
     render(map[e.getAttribute('data-map')](values), e);
     setup(e);
   });
   root.querySelectorAll('datalist[data-fetch][data-key]').forEach(async e => {
-    let values = await (await fetch('https://gxusbjyqxzhewnzyecur.supabase.co/'+ e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
+    let values = await fetchjson(e.getAttribute('data-fetch'));
     values.forEach(value => {
       let option = document.createElement('option');
       option.value = value[e.getAttribute('data-key')];
@@ -125,10 +139,13 @@ function setup(root) {
     event.preventDefault();
     const data = new FormData(event.target);
     const values = Object.fromEntries(data.entries());
-    let res = await fetch(event.target.action, {method: event.target.getAttribute('data-method') || event.target.method, headers: {
+    let res = await fetch(baseUrl + event.target.getAttribute('action'), {method: event.target.getAttribute('data-method') || event.target.method, headers: {
       'Content-Type': 'application/json',
       'Prefer': event.target.hasAttribute('data-upsert') ? 'resolution=merge-duplicates' : '',
       authorization: `bearer ${localStorage.getItem('auth')}`,
+      apikey: apikey,
+      'Accept-Profile': 'gieze',
+      'Content-Profile': 'gieze',
     }, body: JSON.stringify(values)});
     res.ok && window.location.reload();
     res.json().then(body => event.target.append(body.details || body.message || ''));

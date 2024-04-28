@@ -2,9 +2,12 @@ begin;
 
 set local search_path to gieze;
 
+truncate client cascade;
+truncate product cascade;
+
 insert into client values
-('maison du sichon', '1 rue du sichon'),
-('bio coop', '1 rue de la coop');
+('maison du sichon', '1 rue du sichon', '1 rue du sichon'),
+('bio coop', '1 rue de la coop', '1 rue de la coop');
 
 insert into product values
 ('grand duc', (3.25, 'EUR')::money.amount, 0.055),

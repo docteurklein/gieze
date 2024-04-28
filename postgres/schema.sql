@@ -6,6 +6,8 @@ end $$;
 
 begin;
 
+drop schema if exists gieze cascade;
+drop schema if exists money cascade;
 create schema gieze;
 create schema money;
 grant usage on schema gieze to admin;
@@ -211,34 +213,32 @@ grant select on todo to admin;
 
 create or replace function invoice(client_ text, month_ date) -- should be proc, but postgrest meh
 returns void as $$
-  set transaction isolation level serializable;
-  with fil as (
-    select fi.client, fi.month, fi.total_ht, fi.total_tva, fi.total_ttc, fil.product, fil.quantity
-    from gieze.future_invoice fi
-    join gieze.future_invoice_line fil using (client, month)
-    where fi.client = client_
-    and fi.month = month_
-  ),
-  new_invoice as (
-    insert into gieze.invoice(invoice, client, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) select
+  -- set transaction isolation level serializable;
+ with new_invoice as (
+    insert into gieze.invoice(invoice, client, address, client_address, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) 
+    select
       (select coalesce(max(invoice) + 1, 1) from gieze.invoice),
-      (select client from gieze.client where client = client_), -- not a FK so check manually
-      month_,
+      (select client from gieze.client where client = fi.client), -- not a FK so check manually
+      (select billing_address from gieze.client where client = fi.client), -- not a FK so check manually
+      (select shipping_address from gieze.client where client = fi.client), -- not a FK so check manually
+      fi.month,
       now(),
       now() + interval '1 month',
-      fil.total_ht,
-      fil.total_tva,
-      fil.total_ttc,
+      fi.total_ht,
+      fi.total_tva,
+      fi.total_ttc,
       'bank info',
       'legal infos'
-    from fil
+    from gieze.future_invoice fi
+    where fi.client = client_
+    and fi.month = month_
     returning client, month, invoice
   )
-  insert into gieze.invoice_line(invoice, product, quantity)
-  select ni.invoice, fil.product, fil.quantity
+  insert into gieze.invoice_line(invoice, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
+  select ni.invoice, fil.product, fil.quantity,  unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc
   from new_invoice ni
-  join fil using (client, month);
-
+  join gieze.future_invoice_line fil using (client, month);
+  
   update bl set invoiced = true
   where date_trunc('month', shipped_at)::date = month_
   and client = client_
@@ -246,11 +246,5 @@ returns void as $$
 $$ language sql;
 
 grant execute on function invoice to admin;
-
-create or replace function he(html text) returns text
-language sql strict immutable
-as $$
-    select replace(replace(replace(replace(replace(html, '&', '&amp;'), '''', '&#39;'), '"', '&quot;'), '>', '&gt;'), '<', '&lt;')
-$$;
 
 commit;
