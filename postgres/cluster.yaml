@@ -4,8 +4,24 @@ metadata:
   name: gieze
 spec:
   instances: 1
+  resources:
+    limits:
+      cpu: "500Mi"
+      memory: "500Mi"
   storage:
     size: 10Gi
+  # walStorage:
+  #   size: 10Gi
+  # backup:
+  #   barmanObjectStore:
+  #     destinationPath: "gs://<destination path here>"
+  #     googleCredentials:
+  #       gkeEnvironment: true
+
+  # serviceAccountTemplate:
+  #   metadata:
+  #     annotations:
+  #       iam.gke.io/gcp-service-account:  [...].iam.gserviceaccount.com
   #bootstrap:
   #  initdb:
   #    postInitApplicationSQLRefs:

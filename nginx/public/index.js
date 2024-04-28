@@ -100,6 +100,11 @@ function interpolate(template, params) {
 }
 
 function setup(root) {
+  if ('auth' in window) {
+    auth.addEventListener('change', (event) => {
+      localStorage.setItem('auth', event.target.value);
+    });
+  }
   root.querySelectorAll('[data-fetch][data-map]').forEach(async e => {
     let values = await (await fetch(e.getAttribute('data-fetch'), {headers: {authorization: `bearer ${localStorage.getItem('auth')}`}})).json();
     render(map[e.getAttribute('data-map')](values), e);
@@ -127,12 +132,6 @@ function setup(root) {
     }, body: JSON.stringify(values)});
     res.ok && window.location.reload();
     res.json().then(body => event.target.append(body.details || body.message || ''));
-  });
-}
-
-if ('auth' in window) {
-  auth.addEventListener('change', (event) => {
-    localStorage.setItem('auth', event.target.value);
   });
 }
 

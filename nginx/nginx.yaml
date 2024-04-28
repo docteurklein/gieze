@@ -101,17 +101,36 @@ spec:
         - name: nginx-config
           configMap:
             name: nginx-config
-        - name: public
-          hostPath:
-            path: /home/florian/work/gieze/nginx/public
-            type: Directory
+        - name: nginx-public
+          configMap:
+            name: nginx-public
+        - name: nginx-images
+          configMap:
+            name: nginx-images
+        - name: nginx-vendor
+          configMap:
+            name: nginx-vendor
+        # - name: public
+        #   hostPath:
+        #     path: /home/florian/work/gieze/nginx/public
+        #     type: Directory
       containers:
       - image: nginx
         name: nginx
         volumeMounts:
-         - name: public
-           mountPath: /usr/share/nginx/html
+         # - name: public
+         #   mountPath: /usr/share/nginx/html
          - name: nginx-config
            mountPath: /etc/nginx/nginx.conf
            subPath: nginx.conf
+         - name: nginx-public
+           mountPath: /usr/share/nginx/html
+         - name: nginx-images
+           mountPath: /usr/share/nginx/html/images
+         - name: nginx-vendor
+           mountPath: /usr/share/nginx/html/vendor
+        resources:
+          limits:
+            cpu: "100m"
+            memory: "50Mi"
 

@@ -38,3 +38,7 @@ spec:
         name: swagger
         env:
           - {name: API_URL, value: '/api/' }
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "100Mi"

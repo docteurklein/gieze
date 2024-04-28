@@ -8,7 +8,7 @@ produit:
  - 
 
 invoice: 
-  - groupb by bl:
+  - group by bl:
     - numero
     - date de livraison
     - keep detail of each BL

@@ -53,3 +53,7 @@ spec:
           - {name: PGRST_DB_SCHEMAS, value: 'gieze' }
           - {name: PGRST_OPENAPI_MODE, value: 'ignore-privileges' }
           - {name: PGRST_OPENAPI_SERVER_PROXY_URI, value: 'http://0.0.0.0:8080/api/' }
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "500Mi"
