@@ -1,0 +1,58 @@
+<html>
+	<head>
+  	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  	<!-- <link rel="stylesheet" href="/print.css"> -->
+    <script async type="module" src="/index.js"></script>
+	</head>
+	<body>
+    <script id="template" type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.1" data-template>
+    {{@each(it) => invoice}}
+  	<img src="/images/logo-gieze.png"/>
+    <h1>{{invoice.client}} #{{invoice.invoice}}</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Libellé</td>
+          <th class="numeric">Qté</td>
+          <th class="numeric">PU HT</td>
+          <th class="numeric">Prix HT</td>
+          <th class="numeric">% TVA</td>
+          <th class="numeric">TVA</td>
+          <th class="numeric">TTC</td>
+        </tr>
+      </thead>
+      <tbody>
+        {{@each(invoice.invoice_line_detail) => group}}
+          <tr>
+            <th colspan="7">BL n°{{group.bl}} du {{group.shipped_at | date}}</th>
+          </tr>
+          {{@each(group.details) => line}}
+            <tr>
+              <td>{{line.product}}</td>
+              <td class="numeric">{{line.quantity}}</td>
+              <td class="numeric">{{line.unit_price_ht.amount}} €</td>
+              <td class="numeric">{{line.total_price_ht.amount}} €</td>
+              <td class="numeric">{{!line.tva_rate * 100}}</td>
+              <td class="numeric">{{line.total_tva.amount}} €</td>
+              <td class="numeric">{{line.total_price_ttc.amount}} €</td>
+            </tr>
+        	{{/each}}
+      	{{/each}}
+       </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="3">Totals</th>
+          <td class="numeric">{{invoice.total_ht.amount}} €</td>
+          <td></td>
+          <td class="numeric">{{invoice.total_tva.amount}} €</td>
+          <td class="numeric">{{invoice.total_ttc.amount}} €</td>
+        </tr>
+      </tfoot>
+    </table>
+    {{/each}}
+    </script
+  </body>
+</html>

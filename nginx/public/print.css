@@ -1,0 +1,40 @@
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #323232;
+}
+
+th, td {
+  padding: .5rem;
+}
+
+th {
+  text-align: left;
+}
+
+td .numeric {
+  text-align: right;
+}
+
+@media print {
+  body {
+    font-size: 6pt;
+    color: #000;
+    background-color: #fff;
+    background-image: none;
+    margin: 0;
+    padding: 0;
+  }
+  table {
+    page-break-inside: avoid;
+  }
+}
+@media print and (max-width: 5in) {
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+}

@@ -20,7 +20,7 @@ create extension pg_trgm with schema gieze;
 set local search_path to gieze;
 
 create type money._amount as (
-  amount numeric(6, 3),
+  amount numeric(6, 2),
   currency text
 );
 
@@ -121,7 +121,7 @@ grant all on table product to admin;
 
 create table bl (
   bl bigint not null primary key,
-  client text not null references client (client),
+  client text not null references client (client) on delete cascade,
   inserted_at timestamptz not null default now(),
   shipped_at date,
   invoiced boolean default false
@@ -130,8 +130,8 @@ create table bl (
 grant all on table bl to admin;
 
 create table bl_line (
-  bl bigint not null references bl (bl),
-  product text not null references product (product),
+  bl bigint not null references bl (bl) on delete cascade,
+  product text not null references product (product) on delete cascade,
   quantity bigint not null check (quantity > 0),
   primary key (bl, product)
 );
@@ -157,24 +157,28 @@ create table invoice (
 
 grant all on table invoice to admin;
 
-
 create table invoice_line (
-  invoice bigint not null references invoice (invoice),
+  invoice bigint not null references invoice (invoice) on delete cascade,
+  bl text not null,
   product text not null,
   quantity bigint not null check (quantity > 0),
+  shipped_at date not null,
   unit_price_ht money.amount not null,
   total_price_ht money.amount not null,
   tva_rate numeric(5, 5) not null,
   total_tva money.amount not null,
-  total_price_ttc money.amount not null
+  total_price_ttc money.amount not null,
+  primary key (invoice, bl, product)
 );
 
 grant all on table invoice_line to admin;
 
-create view future_invoice_line(client, month, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc) as
+create view future_invoice_line(client, month, bl, shipped_at, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc) as
 select
   client,
   date_trunc('month', shipped_at)::date,
+  bl.bl,
+  shipped_at,
   product,
   quantity,
   unit_price_ht,
@@ -194,7 +198,7 @@ select client, date_trunc('month', shipped_at)::date, money.sum(total_price_ht),
 from client
 join bl using (client)
 join future_invoice_line using (client)
-where shipped_at is not null
+where bl.shipped_at is not null
 and not bl.invoiced
 and future_invoice_line.month = date_trunc('month', shipped_at)::date
 group by 1, 2
@@ -210,6 +214,13 @@ where bl.shipped_at is null
 group by product, client;
 
 grant select on todo to admin;
+
+create view invoice_line_detail(invoice, bl, shipped_at, details) as
+select invoice, bl, shipped_at, jsonb_agg(il)
+from invoice_line il
+group by 1, 2, 3;
+
+grant select on invoice_line_detail to admin;
 
 create or replace function invoice(client_ text, month_ date) -- should be proc, but postgrest meh
 returns void as $$
@@ -234,8 +245,8 @@ returns void as $$
     and fi.month = month_
     returning client, month, invoice
   )
-  insert into gieze.invoice_line(invoice, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
-  select ni.invoice, fil.product, fil.quantity,  unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc
+  insert into gieze.invoice_line(invoice, bl, shipped_at, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
+  select ni.invoice, fil.bl, fil.shipped_at, fil.product, fil.quantity,  unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc
   from new_invoice ni
   join gieze.future_invoice_line fil using (client, month);
   

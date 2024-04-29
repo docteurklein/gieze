@@ -1,11 +1,6 @@
-- make shipped BLs non-editable
+- make shipped BLs editable
 - client:
- - telephone
- - adresse de facturation
- - adresse de livrasion
-produit:
- - price
- - 
+- telephone
 
 invoice: 
   - group by bl:
@@ -15,3 +10,10 @@ invoice:
     - footer
     - include address in footer?
     
+
+- le BL doit apparaitre tel quel sur la facture (n° du BL, date, ...)
+- pouvoir effacer une facture au cas ou
+- pouvoir insérer une facture meme si un client existe deja pour ce mois ci
+- auto incr BL num
+
+- print BL

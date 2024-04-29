@@ -1,92 +1,46 @@
-import {html, render} from '/vendor/lit-html.js';
+import {html, when, render} from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+import * as squirelly from "https://esm.sh/squirrelly";
 
 let baseUrl = 'https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1';
 let apikey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4dXNianlxeHpoZXduenllY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njc0MjAyNzYsImV4cCI6MTk4Mjk5NjI3Nn0.55SXH7OoAt-7wpyIjJkj6OjqPcU4B3aCFYEoev76Ym8';
 
+function to_html(invoice) {
+  return html``;
+}
+
 let map = {
-  bls: bls => bls.map(bl => html`<card class="bl">
-    <h3>#${bl.bl}</h3>
-    ${new Intl.DateTimeFormat().format(new Date(bl.inserted_at))}
-    ${bl.client}
-    ${bl.bl_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="/bl_line" data-upsert>
-      <input type="hidden" name="bl" value="${bl.bl}" />
-      <input type="text" name="product" list="products_list" placeholder="product" />
-      <input type="number" name="quantity" placeholder="quantity" />
-      <input type="submit" value="Ajouter" />
-    </form>
-    <form data-fetch data-method="PATCH" action="/bl?bl=eq.${bl.bl}">
-      <input type="date" name="shipped_at" placeholder="shipped at" value=${bl.shipped_at} />
-      <input type="submit" value="Livrer" />
-    </form>
-  </card>`),
-  future_invoices: invoices => invoices.map(invoice => html`<card class="invoice">
-    <h3>#${invoice.client}</h3>
-    ${invoice.month}
-    ${invoice.future_invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    <form data-fetch method="POST" action="/rpc/invoice">
-      <input type="hidden" name="client_" value="${invoice.client}"/>
-      <input type="hidden" name="month_" value="${invoice.month}"/>
-      <input type="submit" value="Facturer" />
-    </form>
-  </card>`),
-  invoices: invoices => invoices.map(invoice => html`<card class="invoice">
-    <h3>#${invoice.invoice}</h3>
-    for month ${invoice.month}<br/>
-    <p>
-      ${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-    </p>
-    <iframe srcdoc="${(template_as_string(html`<!DOCTYPE html>
-      <html>
-      	<head>
-        	<meta charset="utf-8">
-        	<link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
-        	<link rel="stylesheet" href="/index.css">
-      	</head>
-      	<body>
-        	<img src="/images/logo-gieze.png"/>
-          <h1>${invoice.client} #${invoice.invoice}</h1>
-        	${invoice.invoice_line.map(line => html`<div class="line">${line.quantity} ${line.product}</div>`)}
-      	</body>
-      </html>
-    `, invoice))}"></iframe>
-  </card>`),
-  todo: values => {
-    if (values.length == 0) return html`All done :)`;
-    return values.map(value => html`<li>
-      ${value.quantity}
-      ${value.product}
-      ${value.client}
-    </li>`);
-  },
-  'admin-clients': clients => {
-    if (clients.length == 0) return html`No client yet`;
-    return clients.map(client => html`
-      <form data-fetch method="POST" action="/client" data-upsert>
-        <input type="text" name="client" list="clients_list" placeholder="client" value="${client.client}" />
-        <input type="text" name="billing_address" placeholder="Addresse de facturation" value="${client.billing_address}" />
-        <input type="text" name="shipping_address" placeholder="Addresse de livraison" value="${client.shipping_address}" />
-        <input type="submit" value="Editer" />
-      </form>
-      <form data-fetch data-method="DELETE" action="/client?client=eq.${client.client}">
-        <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
-      </form>
-    `);
-  },
-  'admin-products': values => {
-    if (values.length == 0) return html`No product yet`;
-    return values.map(value => html`
-      <form data-fetch method="POST" action="/product" data-upsert>
-        <input type="text" name="product" list="products_list" placeholder="product" value="${value.product}" />
-        <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" value="(${`${value.unit_price_ht.amount}, '${value.unit_price_ht.currency}')`}" />
-        <input type="text" name="tva_rate" placeholder="Taux TVA" value="${value.tva_rate}" />
-        <input type="submit" value="Editer" />
-      </form>
-      <form data-fetch data-method="DELETE" action="/product?product=eq.${value.product}">
-        <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
-      </form>
-    `);
-  },
+
+    bls: (bls) => bls.map(bl => html`
+    <card class="bl">
+      <h3>#${bl.bl}</h3>
+      ${new Date(bl.inserted_at).toLocaleDateString()}
+      ${bl.client}
+      ${bl.bl_line.map(line => html`<div class="line"> ${line.product} x${line.quantity}</div>`)}
+      ${when(bl.shipped_at,
+        () => html`Livré le ${new Date(bl.shipped_at).toLocaleDateString()}`,
+        () => html`
+          <form data-fetch method="POST" action="/bl_line" data-upsert>
+            <fieldset class="grid">
+              <input type="hidden" name="bl" value="${bl.bl}" />
+              <input type="number" name="quantity" placeholder="quantité" />
+              <input type="text" name="product" list="products_list" placeholder="produit" />
+              <input type="submit" value="Ajouter" />
+            </fieldset>
+          </form>
+          <form data-fetch data-method="PATCH" action="/bl?bl=eq.${bl.bl}">
+            <fieldset class="grid">
+              <input type="date" name="shipped_at" placeholder="Livré le" value=${bl.shipped_at} />
+              <input type="submit" value="Livrer" />
+            </fieldset>
+          </form>
+        `
+      )}
+    </card>
+  `),
+
+  future_invoices: invoices => invoices.map(invoice => html`
+  `),
+
   _: values => values.map(value => html`<div>${JSON.stringify(value)}</div>`),
 };
 
@@ -128,18 +82,21 @@ async function fetchjson(url) {
   })).json();
 }
 
+squirelly.filters.define("date", str => new Date(str).toLocaleDateString());
+
 function setup(root) {
-  if ('auth' in window) {
-    window.auth.addEventListener('submit', (event) => {
-      const data = new FormData(event.target);
-      localStorage.setItem('auth', data.get('password'));
-      event.preventDefault();
-      window.location.reload();
-    });
-  }
   root.querySelectorAll('[data-fetch][data-map]').forEach(async e => {
-    let values = await fetchjson(e.getAttribute('data-fetch'));
-    render(map[e.getAttribute('data-map')](values), e);
+    let value = await fetchjson(e.getAttribute('data-fetch'));
+    render(map[e.getAttribute('data-map')](value, e), e);
+    setup(e);
+  });
+  root.querySelectorAll('[data-fetch][data-template]').forEach(async e => {
+    let value = await fetchjson(e.getAttribute('data-fetch'));
+    const template = e.innerHTML;
+    const rendered = squirelly.render(template, value);
+    var dom = document.createElement("div");
+    dom.innerHTML = rendered;
+    e.replaceWith(dom);
     setup(e);
   });
   root.querySelectorAll('datalist[data-fetch][data-key]').forEach(async e => {
@@ -172,6 +129,15 @@ function setup(root) {
     });
     res.ok && window.location.reload();
     res.json().then(body => event.target.append(body.details || body.message || ''));
+  });
+}
+
+if ('auth' in window) {
+  window.auth.addEventListener('submit', (event) => {
+    const data = new FormData(event.target);
+    localStorage.setItem('auth', data.get('password'));
+    event.preventDefault();
+    window.location.reload();
   });
 }
 

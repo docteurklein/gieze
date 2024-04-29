@@ -1,48 +1,94 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
+  	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/index.css">
     <script async type="module" src="/index.js"></script>
   </head>
   <body>
-    <h1>La Gièze</h1>
-    <form id="auth"><input name="password" type="password" placeholder="password please"><input type="submit" value="login"/></form>
-    <a href="/admin.html">admin</a>
+    <main class="container">
+      <h1>La Gièze</h1>
+      <form id="auth">
+        <fieldset class="grid">
+          <input name="password" type="password" placeholder="password please">
+          <input type="submit" value="login"/>
+        </fieldset>
+      </form>
+      <a href="/admin.html">admin</a>
 
-    <hr/>
-    <h2>TODO</h2>
-    <ul data-fetch="/todo" data-map="todo"></ul> 
+      <hr/>
+      <h2>TODO</h2>
+      <script type="x-template" data-fetch="/todo" data-template>
+        <ul>
+        {{@each(it) => todo}}
+          <li>{{todo.product}} x{{todo.quantity}} {{todo.client}}</li>
+        {{/each}}
+        </ul>
+      </script>
 
-    <datalist data-fetch="/client" data-key="client" id="clients_list">
-    </datalist>
+      <datalist data-fetch="/client" data-key="client" id="clients_list">
+      </datalist>
 
-    <datalist data-fetch="/product" data-key="product" id="products_list">
-    </datalist>
+      <datalist data-fetch="/product" data-key="product" id="products_list">
+      </datalist>
 
-    <hr/>
-    <h2>Bons de livraison</h2>
-    <form data-fetch method="POST" action="/bl">
-      <input type="number" name="bl" placeholder="numéro" />
-      <input type="text" name="client" list="clients_list" placeholder="client" />
-      <input type="submit" value="Ajouter un nouveau BL" />
-    </form>
+      <hr/>
+      <h2>Bons de livraison</h2>
+      <form data-fetch method="POST" action="/bl">
+        <fieldset class="grid">
+          <input type="number" name="bl" placeholder="numéro" />
+          <input type="text" name="client" list="clients_list" placeholder="client" />
+          <input type="submit" value="Ajouter un nouveau BL" />
+        </fieldset>
+      </form>
 
-    <div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
-    <hr/>
-    <details>
-  	<summary>BLs livrés</summary>
-    	<div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div>
-    </details>
-    <hr/>
+      <div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
+      <hr/>
+      <details>
+    	<summary>BLs livrés</summary>
+      	<div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div>
+      </details>
+      <hr/>
 
-    <h2>Futures factures</h2>
-    <div class="invoices" data-fetch="/future_invoice?select=*,future_invoice_line(*)" data-map="future_invoices"></div> 
+      <h2>Futures factures</h2>
+      <script type="x-template" data-fetch="/future_invoice?select=*,future_invoice_line(*)" data-template>
+        {{@each(it) => invoice}}
+          <card class="invoice">
+            <h3>#{{invoice.client}}</h3>
+            {{invoice.month | date}}
+            <form data-fetch method="POST" action="/rpc/invoice">
+              <fieldset class="grid">
+                <input type="hidden" name="client_" value="{{invoice.client}}"/>
+                <input type="hidden" name="month_" value="{{invoice.month}}"/>
+                <input type="submit" value="Facturer" />
+              </fieldset>
+            </form>
+          </card>
+        {{/each}}
+      </script> 
 
-    <hr/>
-    <h2>Historique des factures</h2>
-    <div class="invoices" data-fetch="/invoice?select=*,invoice_line(*)&order=invoice.desc" data-map="invoices"></div> 
-
+      <hr/>
+      <h2>Historique des factures</h2>
+      <script data-fetch="/invoice?select=*,invoice_line_detail(*)&order=invoice.desc" data-template>
+        {{@each(it) => invoice}}
+          <card class="invoice">
+            <h3>#{{invoice.client}}</h3>
+            {{invoice.month | date}}
+            <form data-fetch method="POST" action="/rpc/invoice">
+              <fieldset class="grid">
+                <input type="hidden" name="client_" value="{{invoice.client}}"/>
+                <input type="hidden" name="month_" value="{{invoice.month}}"/>
+                <input type="submit" value="Facturer" />
+              </fieldset>
+            </form>
+            <a href="/pdf.html">Print</a>
+            <iframe src="/pdf.html"></iframe>
+          </card>
+        {{/each}}
+      </script> 
+    </main>
   </body>
 </html>

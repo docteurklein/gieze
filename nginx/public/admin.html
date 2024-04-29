@@ -2,38 +2,75 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://unpkg.com/boltcss/bolt.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/index.css">
     <script async type="module" src="/index.js"></script>
   </head>
   <body>
-    <h1>La Gièze - Admin</h1>
-    <form id="auth"><input name="password" type="password" placeholder="password please"><input type="submit" value="login"/></form>
-    <a href="/">index</a>
+    <main class="container">
+      <h1>La Gièze - Admin</h1>
+      <form id="auth"><input name="password" type="password" placeholder="password please"><input type="submit" value="login"/></form>
+      <a href="/">index</a>
 
-    <datalist data-fetch="/client" data-key="client" id="clients_list">
-    </datalist>
+      <datalist data-fetch="/client" data-key="client" id="clients_list">
+      </datalist>
 
-    <datalist data-fetch="/product" data-key="product" id="products_list">
-    </datalist>
+      <datalist data-fetch="/product" data-key="product" id="products_list">
+      </datalist>
 
-    <h2>clients</h2>
-    <form data-fetch method="POST" action="/client" data-upsert>
-      <input type="text" name="client" list="clients_list" placeholder="client" />
-      <input type="text" name="billing_address" placeholder="billing address" />
-      <input type="text" name="shipping_address" placeholder="shipping address" />
-      <input type="submit" value="Add" />
-    </form>
-    <div class="admin line-client" data-fetch="/client" data-map="admin-clients"></div> 
-    <hr/>
+      <h2>clients</h2>
+      <form data-fetch method="POST" action="/client" data-upsert>
+        <fieldset role="group">
+          <input type="text" name="client" list="clients_list" placeholder="client" />
+          <input type="text" name="billing_address" placeholder="Adresse de facturation" />
+          <input type="text" name="shipping_address" placeholder="Adresse de livraison" />
+          <input type="submit" value="Add" />
+        </fieldset>
+      </form>
 
-    <h2>produits</h2>
-    <form data-fetch method="POST" action="/product">
-      <input type="text" name="product" list="products_list" placeholder="product" />
-      <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" />
-      <input type="text" name="tva_rate" placeholder="Taux TVA" />
-      <input type="submit" value="Add" />
-    </form>
-    <div data-fetch="/product" data-map="admin-products"></div>
+      <script type="x-template" class="admin line-client" data-fetch="/client" data-template>
+        {{@each(it) => client}}
+            <form data-fetch method="POST" action="/client" data-upsert>
+              <fieldset role="group">
+                <input type="text" name="client" list="clients_list" placeholder="client" value="{{client.client}}" />
+                <input type="text" name="billing_address" placeholder="Addresse de facturation" value="{{client.billing_address}}" />
+                <input type="text" name="shipping_address" placeholder="Addresse de livraison" value="{{client.shipping_address}}" />
+                <input type="submit" value="Editer" />
+              </fieldset>
+            </form>
+            <form data-fetch data-method="DELETE" action="/client?client=eq.{{client.client}}">
+              <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
+            </form>
+        {{/each}}
+      </script> 
+      <hr/>
+
+      <h2>produits</h2>
+      <form data-fetch method="POST" action="/product">
+        <fieldset role="group">
+          <input type="text" name="product" list="products_list" placeholder="produit" />
+          <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" />
+          <input type="text" name="tva_rate" placeholder="Taux TVA" />
+          <input type="submit" value="Add" />
+        </fieldset>
+      </form>
+      <script type="x-template" class="admin line-client" data-fetch="/product" data-template>
+        {{@each(it) => product}}
+          <form data-fetch method="POST" action="/product" data-upsert>
+            <fieldset role="group">
+              <input type="text" name="product" list="products_list" placeholder="produit" value="{{product.product}}" />
+              <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" value="({{product.unit_price_ht.amount}}, '{{product.unit_price_ht.currency}}')" />
+              <input type="text" name="tva_rate" placeholder="Taux TVA" value="{{product.tva_rate}}" />
+              <input type="submit" value="Editer" />
+            </fieldset>
+          </form>
+          <form data-fetch data-method="DELETE" action="/product?product=eq.{{product.product}}">
+            <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
+          </form>
+        {{/each}}
+      </script> 
+    </main>
   </body>
 </html>
