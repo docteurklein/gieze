@@ -193,6 +193,13 @@ where shipped_at is not null;
 
 grant select on future_invoice_line to admin;
 
+create view future_invoice_line_group(client, month, bl, shipped_at, details) as
+select client, month, bl, shipped_at, jsonb_agg(il)
+from future_invoice_line il
+group by 1, 2, 3, 4;
+
+grant select on future_invoice_line_group to admin;
+
 create view future_invoice(client, month, total_ht, total_tva, total_ttc) as
 select client, date_trunc('month', shipped_at)::date, money.sum(total_price_ht), money.sum(total_tva), money.sum(total_price_ttc)
 from client
