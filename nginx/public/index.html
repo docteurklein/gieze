@@ -115,24 +115,10 @@
 
       <hr/>
       <h2>Historique des factures</h2>
-      <script type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&order=invoice.desc" data-template>
-        <div class="invoices">
+      <script type="x-t" data-fetch="/invoice?select=*,invoice_line_detail(*)&order=invoice.desc" data-template>
         {{@each(it) => invoice}}
-          <card class="invoice">
-            <h3>#{{invoice.client}}</h3>
-            {{invoice.month | date}}
-            <form data-fetch method="POST" action="/rpc/invoice">
-              <fieldset class="grid">
-                <input type="hidden" name="client_" value="{{invoice.client}}"/>
-                <input type="hidden" name="month_" value="{{invoice.month}}"/>
-                <input type="submit" value="Facturer" />
-              </fieldset>
-            </form>
-            <a href="/pdf.html">Print</a>
-            <iframe src="/pdf.html"></iframe>
-          </card>
+          <iframe src="/pdf.html?invoice={{invoice.invoice}}"></src>
         {{/each}}
-        </div>
       </script> 
     </main>
   </body>

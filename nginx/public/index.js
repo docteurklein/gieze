@@ -3,6 +3,11 @@ import * as squirelly from "https://esm.sh/squirrelly";
 let baseUrl = 'https://gxusbjyqxzhewnzyecur.supabase.co/rest/v1';
 let apikey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4dXNianlxeHpoZXduenllY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njc0MjAyNzYsImV4cCI6MTk4Mjk5NjI3Nn0.55SXH7OoAt-7wpyIjJkj6OjqPcU4B3aCFYEoev76Ym8';
 
+const querystring = new URLSearchParams(window.location.search);
+
+squirelly.filters.define('date', str => new Date(str).toLocaleDateString());
+squirelly.filters.define('querystring', name => querystring.get(name));
+
 async function fetchjson(url) {
   return (await fetch(baseUrl + url, {
     headers: {
@@ -14,17 +19,23 @@ async function fetchjson(url) {
   })).json();
 }
 
-squirelly.filters.define("date", str => new Date(str).toLocaleDateString());
-
 function setup(root) {
   root.querySelectorAll('[data-fetch][data-template]').forEach(async e => {
-    let value = await fetchjson(e.getAttribute('data-fetch'));
+    let value = await fetchjson(squirelly.render(e.getAttribute('data-fetch')));
     const template = e.innerHTML;
     const rendered = squirelly.render(template, value);
     var dom = document.createElement("div");
     dom.innerHTML = rendered;
     e.replaceWith(dom);
     setup(e);
+  });
+  root.querySelectorAll('template[data-fetch][data-iframe]').forEach(async e => {
+    let value = await fetchjson(squirelly.render(e.getAttribute('data-fetch')));
+    const template = e.content;
+    const rendered = squirelly.render(template.innerHTML, value);
+    var dom = document.createElement("iframe");
+    dom.srcdoc = rendered;
+    e.replaceWith(dom);
   });
   root.querySelectorAll('datalist[data-fetch][data-key]').forEach(async e => {
     let values = await fetchjson(e.getAttribute('data-fetch'));

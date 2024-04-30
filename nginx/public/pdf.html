@@ -1,17 +1,36 @@
+<!DOCTYPE html>
 <html>
 	<head>
   	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-  	<!-- <link rel="stylesheet" href="/print.css"> -->
+  	<link rel="stylesheet" href="/print.css">
     <script async type="module" src="/index.js"></script>
 	</head>
-	<body>
-    <script id="template" type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.1" data-template>
+	<body contenteditable>
+    <script id="template" type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.{{'invoice' | querystring}}" data-template>
     {{@each(it) => invoice}}
-  	<img src="/images/logo-gieze.png"/>
-    <h1>{{invoice.client}} #{{invoice.invoice}}</h1>
+    <div class="container">
+    <header class="grid">
+      <div>
+        <img src="/images/logo-gieze.png"/>
+        <h2>La Gièze</h2>
+        03250 Ferrières-sur-Sichon<br>
+
+        06 60 77 09 97
+      </div>
+      <div>
+        <h1>Facture n° {{invoice.invoice}}</h1>
+        Date: {{invoice.invoiced_at | date}}<br>
+        <b>Echéance: {{invoice.expected_at | date}}</b><br>
+        <hr/>
+        <h3>{{invoice.client}}</h3>
+        Adresse
+      </div>
+    </header>
+    <main>
+    <hr/>
     <table>
       <thead>
         <tr>
@@ -52,6 +71,12 @@
         </tr>
       </tfoot>
     </table>
+    </main>
+    <footer>
+      <pre>
+      footer 
+    </footer>
+    </div>
     {{/each}}
     </script
   </body>
