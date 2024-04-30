@@ -102,6 +102,17 @@
             <h3>#{{invoice.client}}</h3>
             {{invoice.month | date}}
             <table>
+             <thead>
+              <tr>
+                <th>Libellé</td>
+                <th class="numeric">Qté</td>
+                <th class="numeric">PU HT</td>
+                <th class="numeric">Prix HT</td>
+                <th class="numeric">% TVA</td>
+                <th class="numeric">TVA</td>
+                <th class="numeric">TTC</td>
+              </tr>
+            </thead>
             {{@each(invoice.future_invoice_line_group) => group}}
               <tr>
                 <th colspan="7">BL n°{{group.bl}} du {{group.shipped_at | date}}</th>
@@ -112,7 +123,7 @@
                   <td class="numeric">{{line.quantity}}</td>
                   <td class="numeric">{{line.unit_price_ht.amount}} €</td>
                   <td class="numeric">{{line.total_price_ht.amount}} €</td>
-                  <td class="numeric">{{!line.tva_rate * 100}}</td>
+                  <td class="numeric">{{line.tva_rate * 100}}</td>
                   <td class="numeric">{{line.total_tva.amount}} €</td>
                   <td class="numeric">{{line.total_price_ttc.amount}} €</td>
                 </tr>

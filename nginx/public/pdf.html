@@ -21,9 +21,9 @@
         06 60 77 09 97
       </div>
       <div>
-        <h1>Facture n° {{invoice.invoice}}</h1>
+        <h1>Facture n° {{invoice.code}}</h1>
         Date: {{invoice.invoiced_at | date}}<br>
-        <b>Echéance: {{invoice.expected_at | date}}</b><br>
+        <b>Echéance: {{invoice.deadline_at | date}}</b><br>
         <hr/>
         <h3>{{invoice.client}}</h3>
         Adresse
@@ -54,7 +54,7 @@
               <td class="numeric">{{line.quantity}}</td>
               <td class="numeric">{{line.unit_price_ht.amount}} €</td>
               <td class="numeric">{{line.total_price_ht.amount}} €</td>
-              <td class="numeric">{{!line.tva_rate * 100}}</td>
+              <td class="numeric">{{line.tva_rate * 100}}</td>
               <td class="numeric">{{line.total_tva.amount}} €</td>
               <td class="numeric">{{line.total_price_ttc.amount}} €</td>
             </tr>

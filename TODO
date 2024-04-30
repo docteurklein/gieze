@@ -2,18 +2,9 @@
 - client:
 - telephone
 
-invoice: 
-  - group by bl:
-    - numero
-    - date de livraison
-    - keep detail of each BL
-    - footer
-    - include address in footer?
-    
-
-- le BL doit apparaitre tel quel sur la facture (n° du BL, date, ...)
 - pouvoir effacer une facture au cas ou
 - pouvoir insérer une facture meme si un client existe deja pour ce mois ci
 - auto incr BL num
 
 - print BL
+
