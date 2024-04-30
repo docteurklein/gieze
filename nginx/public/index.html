@@ -12,7 +12,7 @@
     <main class="container">
       <h1>La Gièze</h1>
       <form id="auth">
-        <fieldset class="grid">
+        <fieldset role="group">
           <input name="password" type="password" placeholder="password please">
           <input type="submit" value="login"/>
         </fieldset>
@@ -45,16 +45,58 @@
         </fieldset>
       </form>
 
-      <div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-map="bls"></div> 
+      <script type="x-template" data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-template>
+        <div class="bls">
+        {{@each(it) => bl}}
+        <card class="bl">
+          <h3>#{{bl.bl}}</h3>
+          {{bl.inserted_at | date}}
+          {{bl.client}}
+          {{@each(bl.bl_line) => line}}
+            <div class="line"> {{line.product}} x{{line.quantity}}</div>
+          {{/each}}
+          <form data-fetch method="POST" action="/bl_line" data-upsert>
+            <fieldset class="grid">
+              <input type="hidden" name="bl" value="{{bl.bl}}" />
+              <input type="number" name="quantity" placeholder="quantité" />
+              <input type="text" name="product" list="products_list" placeholder="produit" />
+              <input type="submit" value="Ajouter" />
+            </fieldset>
+          </form>
+          <form data-fetch data-method="PATCH" action="/bl?bl=eq.{{bl.bl}}">
+            <fieldset class="grid">
+              <input type="date" name="shipped_at" placeholder="Livré le" value={{bl.shipped_at}} />
+              <input type="submit" value="Livrer" />
+            </fieldset>
+          </form>
+        </card>
+        {{/each}}
+        </div>
+      </script> 
       <hr/>
       <details>
     	<summary>BLs livrés</summary>
-      	<div class="bls" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-map="bls"></div>
+        <script type="x-template" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-template>
+          <div class="bls">
+          {{@each(it) => bl}}
+          <card class="bl">
+            <h3>#{{bl.bl}}</h3>
+            {{bl.inserted_at | date}}
+            {{bl.client}}
+            {{@each(bl.bl_line) => line}}
+              <div class="line"> {{line.product}} x{{line.quantity}}</div>
+            {{/each}}
+            <p>Livré le {{bl.shipped_at | date}}</p>
+          </card>
+          {{/each}}
+          </div>
+        </script> 
       </details>
       <hr/>
 
       <h2>Futures factures</h2>
       <script type="x-template" data-fetch="/future_invoice?select=*,future_invoice_line(*)" data-template>
+        <div class="invoices">
         {{@each(it) => invoice}}
           <card class="invoice">
             <h3>#{{invoice.client}}</h3>
@@ -68,11 +110,13 @@
             </form>
           </card>
         {{/each}}
+        </div>
       </script> 
 
       <hr/>
       <h2>Historique des factures</h2>
-      <script data-fetch="/invoice?select=*,invoice_line_detail(*)&order=invoice.desc" data-template>
+      <script type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&order=invoice.desc" data-template>
+        <div class="invoices">
         {{@each(it) => invoice}}
           <card class="invoice">
             <h3>#{{invoice.client}}</h3>
@@ -88,6 +132,7 @@
             <iframe src="/pdf.html"></iframe>
           </card>
         {{/each}}
+        </div>
       </script> 
     </main>
   </body>

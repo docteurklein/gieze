@@ -11,7 +11,12 @@
   <body>
     <main class="container">
       <h1>La Gièze - Admin</h1>
-      <form id="auth"><input name="password" type="password" placeholder="password please"><input type="submit" value="login"/></form>
+      <form id="auth">
+        <fieldset role="group">
+          <input name="password" type="password" placeholder="password please">
+          <input type="submit" value="login"/>
+        </fieldset>
+      </form>
       <a href="/">index</a>
 
       <datalist data-fetch="/client" data-key="client" id="clients_list">
@@ -26,11 +31,12 @@
           <input type="text" name="client" list="clients_list" placeholder="client" />
           <input type="text" name="billing_address" placeholder="Adresse de facturation" />
           <input type="text" name="shipping_address" placeholder="Adresse de livraison" />
-          <input type="submit" value="Add" />
+          <input type="submit" value="Ajouter" />
         </fieldset>
       </form>
 
       <script type="x-template" class="admin line-client" data-fetch="/client" data-template>
+        <div class="admin-row">
         {{@each(it) => client}}
             <form data-fetch method="POST" action="/client" data-upsert>
               <fieldset role="group">
@@ -41,9 +47,10 @@
               </fieldset>
             </form>
             <form data-fetch data-method="DELETE" action="/client?client=eq.{{client.client}}">
-              <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
+              <input type="submit" value="Effacer" onclick="return confirm('Effacer?')" />
             </form>
         {{/each}}
+        </div>
       </script> 
       <hr/>
 
@@ -53,10 +60,11 @@
           <input type="text" name="product" list="products_list" placeholder="produit" />
           <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" />
           <input type="text" name="tva_rate" placeholder="Taux TVA" />
-          <input type="submit" value="Add" />
+          <input type="submit" value="Ajouter" />
         </fieldset>
       </form>
       <script type="x-template" class="admin line-client" data-fetch="/product" data-template>
+        <div class="admin-row">
         {{@each(it) => product}}
           <form data-fetch method="POST" action="/product" data-upsert>
             <fieldset role="group">
@@ -67,9 +75,10 @@
             </fieldset>
           </form>
           <form data-fetch data-method="DELETE" action="/product?product=eq.{{product.product}}">
-            <input type="submit" value="Effacer!" onclick="return confirm('Effacer?')" />
+            <input type="submit" value="Effacer" onclick="return confirm('Effacer?')" />
           </form>
         {{/each}}
+        </div>
       </script> 
     </main>
   </body>

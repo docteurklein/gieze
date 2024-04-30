@@ -7,6 +7,14 @@
   grid-gap: 1rem;
 }
 
+.admin-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr .1fr;
+  grid-auto-rows: auto;
+  grid-gap: 1rem;
+}
+
 iframe {
   height: 100dvh;
   width: 100%;
