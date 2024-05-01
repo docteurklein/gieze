@@ -152,8 +152,8 @@ create table invoice (
   month date,
   bank_info text not null,
   legal_infos text not null,
-  footer text default null,
-  unique (client, month)
+  footer text default null
+  -- unique (client, month)
 );
 
 grant all on table invoice to admin;
@@ -232,44 +232,43 @@ grant select on invoice_line_detail to admin;
 
 create or replace function invoice(client_ text, month_ date) -- should be proc, but postgrest meh
 returns void as $$
-  -- set transaction isolation level serializable;
- with next(number, code) as (
+-- set transaction isolation level serializable;
+with next(number) as (
   select
-    coalesce(max(invoice) + 1, 1),
-    format('%s-%s', to_char(month, 'YY-MM'), to_char(coalesce(max(invoice) + 1, 1), 'fm000')),
+    coalesce(max(invoice) + 1, 1)
   from gieze.invoice
   where month = month_
 ),
 new_invoice as (
-    insert into gieze.invoice(invoice, code, client, address, client_address, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) 
-    select
-      next.number,
-      next.code,
-      (select client from gieze.client where client = fi.client), -- not a FK so check manually
-      (select billing_address from gieze.client where client = fi.client), -- not a FK so check manually
-      (select shipping_address from gieze.client where client = fi.client), -- not a FK so check manually
-      fi.month,
-      now(),
-      now() + interval '1 month',
-      fi.total_ht,
-      fi.total_tva,
-      fi.total_ttc,
-      'bank info',
-      'legal infos'
-    from gieze.future_invoice fi, next
-    where fi.client = client_
-    and fi.month = month_
-    returning client, month, invoice
-  )
-  insert into gieze.invoice_line(invoice, bl, shipped_at, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
-  select ni.invoice, fil.bl, fil.shipped_at, fil.product, fil.quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc
-  from new_invoice ni
-  join gieze.future_invoice_line fil using (client, month);
-  
-  update bl set invoiced = true
-  where date_trunc('month', shipped_at)::date = month_
-  and client = client_
-  and shipped_at is not null;
+  insert into gieze.invoice(invoice, code, client, address, client_address, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) 
+  select
+    next.number,
+    format('%s-%s', to_char(month, 'YY-MM'), to_char(next.number, 'fm000')),
+    (select client from gieze.client where client = fi.client), -- not a FK so check manually
+    (select billing_address from gieze.client where client = fi.client), -- not a FK so check manually
+    (select shipping_address from gieze.client where client = fi.client), -- not a FK so check manually
+    fi.month,
+    now(),
+    now() + interval '1 month',
+    fi.total_ht,
+    fi.total_tva,
+    fi.total_ttc,
+    'bank info',
+    'legal infos'
+  from gieze.future_invoice fi, next
+  where fi.client = client_
+  and fi.month = month_
+  returning client, month, invoice
+)
+insert into gieze.invoice_line(invoice, bl, shipped_at, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
+select ni.invoice, fil.bl, fil.shipped_at, fil.product, fil.quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc
+from new_invoice ni
+join gieze.future_invoice_line fil using (client, month);
+
+update bl set invoiced = true
+where date_trunc('month', shipped_at)::date = month_
+and client = client_
+and shipped_at is not null;
 $$ language sql;
 
 grant execute on function invoice to admin;

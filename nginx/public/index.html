@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/css/tabs.css">
     <link rel="stylesheet" href="/index.css">
     <script async type="module" src="/index.js"></script>
   </head>
@@ -20,7 +21,7 @@
       <a href="/admin.html">admin</a>
 
       <hr/>
-      <h2>TODO</h2>
+      <h3>TODO</h3>
       <script type="x-template" data-fetch="/todo" data-template>
         <ul>
         {{@each(it) => todo}}
@@ -28,6 +29,7 @@
         {{/each}}
         </ul>
       </script>
+      <hr/>
 
       <datalist data-fetch="/client" data-key="client" id="clients_list">
       </datalist>
@@ -35,135 +37,137 @@
       <datalist data-fetch="/product" data-key="product" id="products_list">
       </datalist>
 
-      <hr/>
-      <h2>Bons de livraison</h2>
-      <form data-fetch method="POST" action="/bl">
-        <fieldset class="grid">
-          <input type="number" name="bl" placeholder="numéro" />
-          <input type="text" name="client" list="clients_list" placeholder="client" />
-          <input type="submit" value="Ajouter un nouveau BL" />
-        </fieldset>
-      </form>
+      <input id="tab1" type="radio" name="tabs" checked>
+      <label class="tab" for="tab1">Bons de livraison</label>
+    
+      <input id="tab2" type="radio" name="tabs">
+      <label class="tab" for="tab2">Factures</label>
 
-      <script type="x-template" data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-template>
-        <div class="bls">
-        {{@each(it) => bl}}
-        <card class="bl">
-          <h3>#{{bl.bl}}</h3>
-          {{bl.inserted_at | date}}
-          {{bl.client}}
-          {{@each(bl.bl_line) => line}}
-            <div class="line"> {{line.product}} x{{line.quantity}}</div>
-          {{/each}}
-          <form data-fetch method="POST" action="/bl_line" data-upsert>
-            <fieldset class="grid">
-              <input type="hidden" name="bl" value="{{bl.bl}}" />
-              <input type="number" name="quantity" placeholder="quantité" />
-              <input type="text" name="product" list="products_list" placeholder="produit" />
-              <input type="submit" value="Ajouter" />
-            </fieldset>
-          </form>
-          <form data-fetch data-method="PATCH" action="/bl?bl=eq.{{bl.bl}}">
-            <fieldset class="grid">
-              <input type="date" name="shipped_at" placeholder="Livré le" value={{bl.shipped_at}} />
-              <input type="submit" value="Livrer" />
-            </fieldset>
-          </form>
-        </card>
-        {{/each}}
-        </div>
-      </script> 
-      <hr/>
-      <details>
-    	<summary>BLs livrés</summary>
-        <script type="x-template" data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-template>
+      <section id="content1" class="tab">
+        <form data-fetch method="POST" action="/bl">
+          <fieldset class="grid">
+            <input type="number" name="bl" placeholder="numéro" />
+            <input type="text" name="client" list="clients_list" placeholder="client" />
+            <input type="submit" value="Ajouter un nouveau BL" />
+          </fieldset>
+        </form>
+
+        <hr/>
+        <div data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-template="bls"></div>
+        <hr/>
+
+        <details>
+        	<summary>BLs livrés</summary>
+          <div data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-template="bls"></div>
+        </details>
+      
+        <script type="x-template" id="bls">
           <div class="bls">
           {{@each(it) => bl}}
           <card class="bl">
-            <h3>#{{bl.bl}}</h3>
-            {{bl.inserted_at | date}}
-            {{bl.client}}
+            <h3>#{{bl.bl}} {{bl.client}}</h3>
+            <a href="/bl.html?bl={{bl.bl}}">PDF</a><br>
             {{@each(bl.bl_line) => line}}
-              <div class="line"> {{line.product}} x{{line.quantity}}</div>
+              <form data-fetch method="POST" action="/bl_line" data-upsert>
+                <fieldset role="group">
+                  <input type="hidden" name="bl" value="{{bl.bl}}" />
+                  <input type="number" name="quantity" placeholder="quantité" value="{{line.quantity}}" />
+                  <input type="text" name="product" list="products_list" placeholder="produit" value="{{line.product}}" />
+                  <input type="submit" value="Editer" />
+                </fieldset>
+              </form>
             {{/each}}
-            <p>Livré le {{bl.shipped_at | date}}</p>
+            <form data-fetch method="POST" action="/bl_line" data-upsert>
+              <fieldset role="group">
+                <input type="hidden" name="bl" value="{{bl.bl}}" />
+                <input type="number" name="quantity" placeholder="quantité" />
+                <input type="text" name="product" list="products_list" placeholder="produit" />
+                <input type="submit" value="Ajouter" />
+              </fieldset>
+            </form>
+            <form data-fetch data-method="PATCH" action="/bl?bl=eq.{{bl.bl}}">
+              <fieldset class="grid">
+                <input type="date" name="shipped_at" placeholder="Livré le" value={{bl.shipped_at}} />
+                <input type="submit" value="Livrer" />
+              </fieldset>
+            </form>
           </card>
           {{/each}}
           </div>
         </script> 
-      </details>
-      <hr/>
-
-      <h2>Futures factures</h2>
-      <script type="x-template" data-fetch="/future_invoice?select=*,future_invoice_line_group(*)" data-template>
-        <div class="invoices">
-        {{@each(it) => invoice}}
-          <card class="invoice overflow-auto">
-            <h3>#{{invoice.client}}</h3>
-            {{invoice.month | date}}
-            <table>
-             <thead>
-              <tr>
-                <th>Libellé</td>
-                <th class="numeric">Qté</td>
-                <th class="numeric">PU HT</td>
-                <th class="numeric">Prix HT</td>
-                <th class="numeric">% TVA</td>
-                <th class="numeric">TVA</td>
-                <th class="numeric">TTC</td>
-              </tr>
-            </thead>
-            {{@each(invoice.future_invoice_line_group) => group}}
-              <tr>
-                <th colspan="7">BL n°{{group.bl}} du {{group.shipped_at | date}}</th>
-              </tr>
-              {{@each(group.details) => line}}
+      </section>
+      <section id="content2" class="tab">
+        <script type="x-template" data-fetch="/future_invoice?select=*,future_invoice_line_group(*)" data-template>
+          <div class="invoices">
+          {{@each(it) => invoice}}
+            <card class="invoice overflow-auto">
+              <h3>#{{invoice.client}}</h3>
+              {{invoice.month | date}}
+              <table>
+               <thead>
                 <tr>
-                  <td>{{line.product}}</td>
-                  <td class="numeric">{{line.quantity}}</td>
-                  <td class="numeric">{{line.unit_price_ht.amount}} €</td>
-                  <td class="numeric">{{line.total_price_ht.amount}} €</td>
-                  <td class="numeric">{{line.tva_rate * 100}}</td>
-                  <td class="numeric">{{line.total_tva.amount}} €</td>
-                  <td class="numeric">{{line.total_price_ttc.amount}} €</td>
+                  <th>Libellé</td>
+                  <th class="numeric">Qté</td>
+                  <th class="numeric">PU HT</td>
+                  <th class="numeric">Prix HT</td>
+                  <th class="numeric">% TVA</td>
+                  <th class="numeric">TVA</td>
+                  <th class="numeric">TTC</td>
                 </tr>
-            	{{/each}}
+              </thead>
+              {{@each(invoice.future_invoice_line_group) => group}}
+                <tr>
+                  <th colspan="7">BL n°{{group.bl}} du {{group.shipped_at | date}}</th>
+                </tr>
+                {{@each(group.details) => line}}
+                  <tr>
+                    <td>{{line.product}}</td>
+                    <td class="numeric">{{line.quantity}}</td>
+                    <td class="numeric">{{line.unit_price_ht.amount}} €</td>
+                    <td class="numeric">{{line.total_price_ht.amount}} €</td>
+                    <td class="numeric">{{line.tva_rate * 100}}</td>
+                    <td class="numeric">{{line.total_tva.amount}} €</td>
+                    <td class="numeric">{{line.total_price_ttc.amount}} €</td>
+                  </tr>
+              	{{/each}}
+              {{/each}}
+              <tfoot>
+                <tr>
+                  <th colspan="3">Total</th>
+                  <td class="numeric">{{invoice.total_ht.amount}} €</td>
+                  <td></td>
+                  <td class="numeric">{{invoice.total_tva.amount}} €</td>
+                  <td class="numeric">{{invoice.total_ttc.amount}} €</td>
+                </tr>
+              </tfoot>
+              </table>
+
+              <form data-fetch method="POST" action="/rpc/invoice">
+                <fieldset class="grid">
+                  <input type="hidden" name="client_" value="{{invoice.client}}"/>
+                  <input type="hidden" name="month_" value="{{invoice.month}}"/>
+                  <input type="submit" value="Facturer" />
+                </fieldset>
+              </form>
+            </card>
+          {{/each}}
+          </div>
+        </script>
+        <hr/>
+        <details>
+          <summary>Factures passées</summary>
+          <script type="x-t" data-fetch="/invoice?select=*&order=invoice.desc" data-template>
+            <div class="invoices">
+            {{@each(it) => invoice}}
+              <card class="invoice">
+                <a href="/invoice.html?invoice={{invoice.invoice}}">PDF</a>
+                <iframe src="/invoice.html?invoice={{invoice.invoice}}"></iframe>
+              </card>
             {{/each}}
-            <tfoot>
-              <tr>
-                <th colspan="3">Total</th>
-                <td class="numeric">{{invoice.total_ht.amount}} €</td>
-                <td></td>
-                <td class="numeric">{{invoice.total_tva.amount}} €</td>
-                <td class="numeric">{{invoice.total_ttc.amount}} €</td>
-              </tr>
-            </tfoot>
-            </table>
-
-            <form data-fetch method="POST" action="/rpc/invoice">
-              <fieldset class="grid">
-                <input type="hidden" name="client_" value="{{invoice.client}}"/>
-                <input type="hidden" name="month_" value="{{invoice.month}}"/>
-                <input type="submit" value="Facturer" />
-              </fieldset>
-            </form>
-          </card>
-        {{/each}}
-        </div>
-      </script> 
-
-      <hr/>
-      <h2>Historique des factures</h2>
-      <script type="x-t" data-fetch="/invoice?select=*&order=invoice.desc" data-template>
-        <div class="invoices">
-        {{@each(it) => invoice}}
-          <card>
-          <a href="/pdf.html?invoice={{invoice.invoice}}">PDF</a>
-          <iframe src="/pdf.html?invoice={{invoice.invoice}}"></iframe>
-          </card>
-        {{/each}}
-        </div>
-      </script> 
+            </div>
+          </script> 
+        </details>
+      </section>
     </main>
   </body>
 </html>

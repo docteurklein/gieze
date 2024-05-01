@@ -1,3 +1,8 @@
+tbody th {
+  text-align: center;
+  font-weight: bold;
+}
+
 @media print {
   @page {
     size: A4; /* DIN A4 standard, Europe */

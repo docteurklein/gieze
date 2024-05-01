@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+  	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  	<link rel="stylesheet" href="/print.css">
+    <script async type="module" src="/index.js"></script>
+	</head>
+	<body contenteditable>
+    <script id="template" type="x-template" data-fetch="/bl?select=*,bl_line(*),client(*)&bl=eq.{{'bl' | querystring}}" data-template>
+    {{@each(it) => bl}}
+    <div class="container">
+    <header class="grid">
+      <div>
+        <h1>BL n° {{bl.bl}}</h1>
+        <h3>{{bl.client.client}}</h3>
+        {{bl.client.billing_address}}
+      </div>
+    </header>
+    <main>
+    <hr/>
+    <table>
+      <thead>
+        <tr>
+          <th>Libellé</td>
+          <th class="numeric">Qté</td>
+        </tr>
+      </thead>
+      <tbody>
+        {{@each(bl.bl_line) => line}}
+          <tr>
+            <td>{{line.product}}</td>
+            <td class="numeric">{{line.quantity}}</td>
+          </tr>
+      	{{/each}}
+       </tbody>
+    </table>
+    </main>
+    <footer>
+      <pre>
+      footer 
+    </footer>
+    </div>
+    {{/each}}
+    </script
+  </body>
+</html>

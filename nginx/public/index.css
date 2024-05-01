@@ -2,16 +2,23 @@
 .bls, .invoices {
   display: grid;
   align-items: center;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  /* grid-template-columns: 1fr 1fr; */
   grid-auto-rows: auto;
   grid-gap: 1rem;
+}
+
+.bl {
+  padding: 1rem;
+  border: 1px solid #c9c9c9;
+  border-radius: 10px;
 }
 
 .admin-row {
   display: grid;
   align-items: center;
   grid-template-columns: 1fr .1fr;
-  grid-auto-rows: auto;
+  /* grid-auto-rows: auto; */
   grid-gap: 1rem;
 }
 

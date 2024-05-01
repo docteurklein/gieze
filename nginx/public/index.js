@@ -22,7 +22,7 @@ async function fetchjson(url) {
 function setup(root) {
   root.querySelectorAll('[data-fetch][data-template]').forEach(async e => {
     let value = await fetchjson(squirelly.render(e.getAttribute('data-fetch')));
-    const template = e.innerHTML;
+    const template = (window[e.getAttribute('data-template')] || e).innerHTML;
     const rendered = squirelly.render(template, value);
     var dom = document.createElement('div');
     dom.innerHTML = rendered;
