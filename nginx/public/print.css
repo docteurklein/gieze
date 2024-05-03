@@ -3,15 +3,23 @@ tbody th {
   font-weight: bold;
 }
 
+header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+td.numeric {
+  text-align: right;
+}
+
 @media print {
   @page {
-    size: A4; /* DIN A4 standard, Europe */
+    size: A4;
     margin: 0;
   }
   html, body {
       width: 210mm;
-      /* height: 297mm; */
-      height: 282mm;
+      height: 297mm;
       font-size: 11px;
       background: #FFF;
       overflow: visible;

@@ -12,7 +12,7 @@
     <script id="template" type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.{{'invoice' | querystring}}" data-template>
     {{@each(it) => invoice}}
     <div class="container">
-    <header class="grid">
+    <header>
       <div>
         <img src="/images/logo-gieze.png"/>
         <h2>La Gièze</h2>

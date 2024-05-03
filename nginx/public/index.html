@@ -45,10 +45,10 @@
 
       <section id="content1" class="tab">
         <form data-fetch method="POST" action="/bl">
-          <fieldset class="grid">
+          <fieldset role="group">
             <input type="number" name="bl" placeholder="numéro" />
             <input type="text" name="client" list="clients_list" placeholder="client" />
-            <input type="submit" value="Ajouter un nouveau BL" />
+            <input type="submit" value="Ajouter BL" />
           </fieldset>
         </form>
 
@@ -65,7 +65,7 @@
           <div class="bls">
           {{@each(it) => bl}}
           <card class="bl">
-            <h3>#{{bl.bl}} {{bl.client}}</h3>
+            <h3>BL n°{{bl.bl}} - {{bl.client}}</h3>
             <a href="/bl.html?bl={{bl.bl}}">PDF</a><br>
             {{@each(bl.bl_line) => line}}
               <form data-fetch method="POST" action="/bl_line" data-upsert>
