@@ -18,39 +18,75 @@
           <input type="submit" value="login"/>
         </fieldset>
       </form>
-      <a href="/admin.html">admin</a>
 
       <hr/>
       <h3>TODO</h3>
-      <script type="x-template" data-fetch="/todo" data-template>
+      <script id="todo" type="x-template">
         <ul>
         {{@each(it) => todo}}
-          <li>{{todo.product}} x{{todo.quantity}} {{todo.client}}</li>
+          <li>
+            {{todo.quantity}}
+            <!-- <a href="#{{todo.product}}"> -->
+              {{todo.product}}
+            <!-- </a> -->
+            pour
+            <!-- <a href="#{{todo.client}}"> -->
+              {{todo.client}}
+            <!-- </a> -->
+          </li>
         {{/each}}
         </ul>
       </script>
+      <div data-template="todo" data-fetch="/todo"></div>
       <hr/>
 
-      <datalist data-fetch="/client" data-key="client" id="clients_list">
-      </datalist>
+      <script type="x-template" id="client-datalist">
+        <datalist data-fetch="/client" data-key="client" id="clients_list">
+        {{@each(it) => client}}
+          <option value="{{client.client}}">{{client.client}}</option>
+        {{/each}}
+        </datalist>
+      </script>
+      <div data-template="client-datalist" data-fetch="/client"></div>
 
-      <datalist data-fetch="/product" data-key="product" id="products_list">
-      </datalist>
+      <script type="x-template" id="product-datalist">
+        <datalist data-fetch="/product" id="products_list">
+        {{@each(it) => product}}
+          <option value="{{product.product}}">{{product.product}}</option>
+        {{/each}}
+        </datalist>
+      </script>
+      <div data-template="product-datalist" data-fetch="/product"></div>
 
       <input id="tab1" type="radio" name="tabs" checked>
-      <label class="tab" for="tab1">Bons de livraison</label>
+      <label class="tab" for="tab1">BLs</label>
     
       <input id="tab2" type="radio" name="tabs">
       <label class="tab" for="tab2">Factures</label>
 
+      <input id="tab3" type="radio" name="tabs">
+      <label class="tab" for="tab3">Clients</label>
+
+      <input id="tab4" type="radio" name="tabs">
+      <label class="tab" for="tab4">Produits</label>
+
       <section id="content1" class="tab">
-        <form data-fetch method="POST" action="/bl">
+        <script type="x-template" id="bl-edit">
+        <form data-intercept method="POST" action="/bl" data-template="bl-edit" data-success="redirect">
           <fieldset role="group">
-            <input type="number" name="bl" placeholder="numéro" />
-            <input type="text" name="client" list="clients_list" placeholder="client" />
-            <input type="submit" value="Ajouter BL" />
+            <input type="number" name="bl" placeholder="numéro" value="{{it.values?.bl ?? ''}}" />
+            <input type="text" name="client" list="clients_list" placeholder="client" value="{{it.values?.client ?? ''}}" />
+            <input {{@if(it.res?.message)}}aria-invalid="true"{{/if}} type="submit" value="Ajouter BL" />
+
+            {{@if(it.res?.message)}}
+            <small id="invalid-helper">
+              {{it.res?.message}}
+            </small>
+            {{/if}}
           </fieldset>
         </form>
+        </script>
+        <div data-template="bl-edit"></div>
 
         <hr/>
         <div data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-template="bls"></div>
@@ -60,44 +96,76 @@
         	<summary>BLs livrés</summary>
           <div data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-template="bls"></div>
         </details>
+
+        <script type="x-template" id="bl_line-edit">
+          <form data-intercept method="POST" action="/bl_line" data-upsert data-template="bl_line-edit">
+            <fieldset class="grid">
+              <input type="hidden" name="bl" value="{{it.values?.bl ?? ''}}" />
+              <input aria-invalid="{{it.response?.ok ? 'false' : 'true'}}" type="number" name="quantity" placeholder="quantité" value="{{it.values?.quantity ?? ''}}" />
+              <input aria-invalid="{{it.response?.ok ? 'false' : 'true'}}" type="text" name="product" list="products_list" placeholder="produit" value="{{it.values?.product ?? ''}}" />
+              <input aria-invalid="{{it.response?.ok ? 'false' : 'true'}}" aria-describedby="invalid-helper" type="submit" value="Editer" />
+              {{@if(it.res?.message)}}
+              <small id="invalid-helper">
+                {{it.res?.message}}
+              </small>
+              {{/if}}
+            </fieldset>
+          </form>
+        </script>
       
         <script type="x-template" id="bls">
           <div class="bls">
           {{@each(it) => bl}}
-          <card class="bl">
-            <h3>BL n°{{bl.bl}} - {{bl.client}}</h3>
-            <a href="/bl.html?bl={{bl.bl}}">PDF</a><br>
-            {{@each(bl.bl_line) => line}}
-              <form data-fetch method="POST" action="/bl_line" data-upsert>
+            <card class="bl">
+              <h3>BL n°{{bl.bl}} - {{bl.client}}</h3>
+              <a href="/bl.html?bl={{bl.bl}}">PDF</a><br>
+              {{@each(bl.bl_line) => line}}
+              <div class="admin-row">
+
+                {{@include("bl_line-edit", {
+                  values: {
+                    bl: bl.bl,
+                    ...line
+                  },
+                  response: {
+                    ok: true,
+                  },
+                })/}}
+
+                <form data-intercept data-method="DELETE" action="/bl_line?bl=eq.{{line.bl}}&product=eq.{{line.product}}">
+                  <fieldset class="grid">
+                    <input type="submit" value="X" onclick="return confirm('Effacer?')" />
+                  </fieldset>
+                </form>
+              </div>
+              {{/each}}
+              <form data-intercept method="POST" action="/bl_line" data-upsert data-template="bl_line-edit" data-success="redirect">
                 <fieldset role="group">
                   <input type="hidden" name="bl" value="{{bl.bl}}" />
-                  <input type="number" name="quantity" placeholder="quantité" value="{{line.quantity}}" />
-                  <input type="text" name="product" list="products_list" placeholder="produit" value="{{line.product}}" />
-                  <input type="submit" value="Editer" />
+                  <input type="number" name="quantity" placeholder="quantité" />
+                  <input type="text" name="product" list="products_list" placeholder="produit" />
+                  <input type="submit" value="Ajouter" />
                 </fieldset>
               </form>
-            {{/each}}
-            <form data-fetch method="POST" action="/bl_line" data-upsert>
-              <fieldset role="group">
-                <input type="hidden" name="bl" value="{{bl.bl}}" />
-                <input type="number" name="quantity" placeholder="quantité" />
-                <input type="text" name="product" list="products_list" placeholder="produit" />
-                <input type="submit" value="Ajouter" />
-              </fieldset>
-            </form>
-            <form data-fetch data-method="PATCH" action="/bl?bl=eq.{{bl.bl}}">
-              <fieldset class="grid">
-                <input type="date" name="shipped_at" placeholder="Livré le" value={{bl.shipped_at}} />
-                <input type="submit" value="Livrer" />
-              </fieldset>
-            </form>
-          </card>
+              <form data-intercept data-method="PATCH" action="/bl?bl=eq.{{bl.bl}}">
+                <fieldset class="grid">
+                  <input type="date" name="shipped_at" placeholder="Livré le" value={{bl.shipped_at}} />
+                  <input type="submit" value="Livrer" />
+                </fieldset>
+              </form>
+              <form data-intercept data-method="DELETE" action="/bl?bl=eq.{{bl.bl}}">
+                <fieldset class="grid">
+                  <input type="submit" value="X" onclick="return confirm('Effacer?')" />
+                </fieldset>
+              </form>
+            </card>
           {{/each}}
           </div>
         </script> 
       </section>
+
       <section id="content2" class="tab">
-        <script type="x-template" data-fetch="/future_invoice?select=*,future_invoice_line_group(*)" data-template>
+        <script type="x-template" id="invoices">
           <div class="invoices">
           {{@each(it) => invoice}}
             <card class="invoice overflow-auto">
@@ -142,7 +210,7 @@
               </tfoot>
               </table>
 
-              <form data-fetch method="POST" action="/rpc/invoice">
+              <form data-intercept method="POST" action="/rpc/invoice">
                 <fieldset class="grid">
                   <input type="hidden" name="client_" value="{{invoice.client}}"/>
                   <input type="hidden" name="month_" value="{{invoice.month}}"/>
@@ -153,10 +221,11 @@
           {{/each}}
           </div>
         </script>
+        <div data-template="invoices" data-fetch="/future_invoice?select=*,future_invoice_line_group(*)"></div>
         <hr/>
         <details>
           <summary>Factures passées</summary>
-          <script type="x-t" data-fetch="/invoice?select=*&order=invoice.desc" data-template>
+          <script type="x-template" id="past-invoices">
             <div class="invoices">
             {{@each(it) => invoice}}
               <card class="invoice">
@@ -165,8 +234,100 @@
               </card>
             {{/each}}
             </div>
-          </script> 
+          </script>
+          <div data-template="past-invoices" data-fetch="/invoice?select=*&order=invoice.desc"></div>
         </details>
+      </section>
+
+      <section id="content3" class="tab">
+        <form data-intercept method="POST" action="/client" data-template="client-edit" data-success="redirect">
+          <!-- <fieldset role="group"> -->
+          <fieldset class="grid">
+            <input type="text" name="client" list="clients_list" placeholder="client" />
+            <input type="text" name="billing_address" placeholder="Adresse de facturation" />
+            <input type="text" name="shipping_address" placeholder="Adresse de livraison" />
+            <input type="submit" value="Ajouter" />
+          </fieldset>
+        </form>
+        <script type="x-template" id="client-edit">
+          <form data-intercept method="POST" action="/client" data-upsert data-template="client-edit">
+            <fieldset class="grid">
+              <input type="text" name="client" list="clients_list" placeholder="client" value="{{it.values?.client}}" />
+              <input type="text" name="billing_address" placeholder="Addresse de facturation" value="{{it.values?.billing_address}}" />
+              <input type="text" name="shipping_address" placeholder="Addresse de livraison" value="{{it.values?.shipping_address}}" />
+              <input {{@if(it.res?.message)}}aria-invalid="true"{{/if}} type="submit" value="Editer" />
+              {{@if(it.res?.message)}}
+              <small id="invalid-helper">
+                {{it.res?.message}}
+              </small>
+              {{/if}}
+            </fieldset>
+          </form>
+        </script>
+
+        <script type="x-template" id="admin-client">
+          <div class="admin-row">
+          {{@each(it) => client}}
+            {{@include("client-edit", {
+              values: {
+                ...client,
+              }
+            })/}}
+            <form data-intercept data-method="DELETE" action="/client?client=eq.{{client.client}}">
+              <fieldset class="grid">
+                <input type="submit" value="X" onclick="return confirm('Effacer?')" />
+              </fieldset>
+            </form>
+          {{/each}}
+          </div>
+        </script> 
+        <div data-template="admin-client" data-fetch="/client"></div>
+      </section>
+
+      <section id="content4" class="tab">
+        <form data-intercept method="POST" action="/product" data-template="product-edit" data-success="redirect">
+          <!-- <fieldset role="group"> -->
+          <fieldset class="grid">
+            <input type="text" name="product" list="products_list" placeholder="produit" />
+            <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" />
+            <input type="text" name="tva_rate" placeholder="Taux TVA" />
+            <input type="submit" value="Ajouter" />
+          </fieldset>
+        </form>
+        <script type="x-template" id="product-edit">
+          <form data-intercept method="POST" action="/product" data-upsert data-template="product-edit">
+            <!-- <fieldset role="group"> -->
+            <fieldset class="grid">
+              <input type="text" name="product" list="products_list" placeholder="produit" value="{{it.values?.product ?? ''}}" />
+              <input type="text" name="unit_price_ht" placeholder="prix unitaire HT" value="{{it.values?.unit_price_ht}}" />
+              <input type="text" name="tva_rate" placeholder="Taux TVA" value="{{it.values?.tva_rate}}" />
+              <input {{@if(it.res?.message)}}aria-invalid="true"{{/if}} type="submit" value="Editer" />
+              {{@if(it.res?.message)}}
+              <small id="invalid-helper">
+                {{it.res?.message}}
+              </small>
+              {{/if}}
+            </fieldset>
+          </form>
+        </script>
+        <script type="x-template" id="admin-product">
+          <div class="admin-row">
+          {{@each(it) => product}}
+                {{@include("product-edit", {
+                  values: {
+                    ...product,
+                    unit_price_ht: `(${product.unit_price_ht.amount}, ${product.unit_price_ht.currency})`,
+                  }
+                })/}}
+                <form data-intercept data-method="DELETE" action="/product?product=eq.{{product.product}}">
+                  <fieldset class="grid">
+                    <input type="submit" value="X" onclick="return confirm('Effacer?')" />
+                  </fieldset>
+                </form>
+          {{/each}}
+          </div>
+        </script>
+        <div data-template="admin-product" data-fetch="/product"></div>
       </section>
     </main>
   </body>

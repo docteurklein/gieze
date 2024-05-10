@@ -8,6 +8,10 @@
   grid-gap: 1rem;
 }
 
+form[data-success] {
+  color: green;
+}
+
 .bl {
   padding: 1rem;
   border: 1px solid #c9c9c9;

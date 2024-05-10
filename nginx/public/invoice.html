@@ -9,7 +9,7 @@
     <script async type="module" src="/index.js"></script>
 	</head>
 	<body contenteditable>
-    <script id="template" type="x-template" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.{{'invoice' | querystring}}" data-template>
+    <script id="invoice" type="x-template">
     {{@each(it) => invoice}}
     <div class="container">
     <header>
@@ -78,6 +78,7 @@
     </footer>
     </div>
     {{/each}}
-    </script
+    </script>
+    <div data-template="invoice" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.{{'invoice' | querystring}}"></div>
   </body>
 </html>

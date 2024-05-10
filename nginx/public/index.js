@@ -8,59 +8,73 @@ const querystring = new URLSearchParams(window.location.search);
 squirelly.filters.define('date', str => new Date(str).toLocaleDateString());
 squirelly.filters.define('querystring', name => querystring.get(name));
 
-async function fetchjson(url) {
-  return (await fetch(baseUrl + url, {
+async function postgrest(url, config) {
+  return await fetch(baseUrl + url, {
+    method: config.method,
     headers: {
       authorization: `Bearer ${localStorage.getItem('auth')}`,
       apikey: apikey,
       'Accept-Profile': 'gieze',
       'Content-Profile': 'gieze',
-    }
-  })).json();
+      ...config.headers,
+    },
+    body: ['post', 'put', 'patch'].includes(config.method.toLowerCase()) ? config.body : null
+  });
 }
 
 function setup(root) {
-  root.querySelectorAll('[data-fetch][data-template]').forEach(async e => {
-    let value = await fetchjson(squirelly.render(e.getAttribute('data-fetch')));
-    const template = (window[e.getAttribute('data-template')] || e).innerHTML;
-    const rendered = squirelly.render(template, value);
-    var dom = document.createElement('div');
-    dom.innerHTML = rendered;
-    e.after(dom);
-    setup(dom);
+  root.querySelectorAll('script[type="x-template"][id]').forEach(e => {
+    const compiled =  squirelly.compile(e.innerHTML);
+    squirelly.templates.define(e.id, compiled);
   });
-  root.querySelectorAll('datalist[data-fetch][data-key]').forEach(async e => {
-    let values = await fetchjson(e.getAttribute('data-fetch'));
-    values.forEach(value => {
-      let option = document.createElement('option');
-      option.value = value[e.getAttribute('data-key')];
-      e.appendChild(option);
-    });
+
+  root.querySelectorAll(':not(form)[data-template]').forEach(async e => {
+    let value = {};
+    if (e.hasAttribute('data-fetch')) {
+      let method = e.getAttribute('data-method') || 'GET';
+      value = await (await postgrest(squirelly.render(e.getAttribute('data-fetch')), {
+        method, 
+      })).json();
+    }
+    render(e, value);
   });
 }
 
+function render(e, value) {
+  const rendered = squirelly.templates.get(e.getAttribute('data-template'))(value, squirelly.defaultConfig);
+  // e.insertAdjacentHTML('afterend', rendered);
+  e.innerHTML = rendered;
+  setup(e);
+}
+
 document.addEventListener('submit', async event => {
-  if (!event.target.hasAttribute('data-fetch')) {
+  if (!event.target.hasAttribute('data-intercept')) {
     return;
   }
   event.preventDefault();
   const data = new FormData(event.target);
   const values = Object.fromEntries(data.entries());
   let method = event.target.getAttribute('data-method') || event.target.method;
-  let res = await fetch(baseUrl + event.target.getAttribute('action'), {
+
+  let response = await postgrest(event.target.getAttribute('action'), {
     method: method,
     headers: {
       'Content-Type': 'application/json',
       'Prefer': event.target.hasAttribute('data-upsert') ? 'resolution=merge-duplicates' : '',
-      authorization: `bearer ${localStorage.getItem('auth')}`,
-      apikey: apikey,
-      'Accept-Profile': 'gieze',
-      'Content-Profile': 'gieze',
     },
-    body: ['post', 'put', 'patch'].includes(method.toLowerCase()) ? JSON.stringify(values) : null
+    body: JSON.stringify(values),
   });
-  res.ok && window.location.reload();
-  res.json().then(body => event.target.append(body.details || body.message || ''));
+
+  if (response.ok && event.target.getAttribute('data-success') === 'redirect') {
+    window.location.reload();
+    return;
+  }
+  let res = await response.clone().json() .catch(_ => response.text());
+  render(event.target, {
+    response,
+    res,
+    values,
+  });
 });
 
 if ('auth' in window) {

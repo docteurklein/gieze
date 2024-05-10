@@ -9,7 +9,7 @@
     <script async type="module" src="/index.js"></script>
 	</head>
 	<body contenteditable>
-    <script id="template" type="x-template" data-fetch="/bl?select=*,bl_line(*),client(*)&bl=eq.{{'bl' | querystring}}" data-template>
+    <script id="bl" type="x-template">
     {{@each(it) => bl}}
     <div class="container">
     <header class="grid">
@@ -44,6 +44,7 @@
     </footer>
     </div>
     {{/each}}
-    </script
-  </body>
+    </script>
+    <div data-template="bl" data-fetch="/bl?select=*,bl_line(*),client(*)&bl=eq.{{'bl' | querystring}}"></div>
+    </body>
 </html>

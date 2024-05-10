@@ -5,103 +5,16 @@ end $$;
 
 begin;
 
-drop schema if exists gieze cascade;
-drop schema if exists money cascade;
-create schema gieze;
-create schema money;
-grant usage on schema gieze to admin;
-grant usage on schema money to admin;
+drop schema if exists desired_gieze cascade;
+create schema desired_gieze;
+grant usage on schema desired_gieze to admin;
 
 -- grant admin to app;
 
-create extension pg_trgm with schema gieze;
+set local search_path to desired_gieze, pg_catalog;
 
-set local search_path to gieze;
-
-create type money._amount as (
-  amount numeric(6, 2),
-  currency text
-);
-
-create domain money.amount as money._amount
-constraint valid check (
-  (value).amount is not null
-  and (value).currency is not null
-);
-
-create function money.to_currency(currency text, a money.amount) returns numeric(6, 2)
-language sql
-immutable
-strict
-parallel safe
-as $$
-select 
-  (a).amount *
-  case currency when (a.currency) then 1
-  else current_setting(format('money.%sto%s', (a).currency, currency))::numeric(6, 2)
-  end
-$$;
-
-create function money.multiply(a money.amount, rate numeric) returns money.amount
-language sql
-immutable
-strict
-parallel safe
-as $$
-select (
-  (a).amount * rate,
-  (a).currency
-)::money.amount
-$$;
-
-create operator * (
-  leftarg = money.amount,
-  rightarg = numeric,
-  function = money.multiply
-);
-
-create function money.substract(a money.amount, b money.amount) returns money.amount
-language sql
-immutable
-strict
-parallel safe
-as $$
-select (
-  (a).amount - money.to_currency((a).currency, b),
-  (a).currency
-)::money.amount
-$$;
-
-create operator - (
-  leftarg = money.amount,
-  rightarg = money.amount,
-  function = money.substract
-);
-
-create function money.add(a money.amount, b money.amount) returns money.amount
-language sql
-immutable
-strict
-parallel safe
-as $$
-select (
-  (a).amount + money.to_currency((a).currency, b),
-  (a).currency
-)::money.amount
-$$;
-
-create operator + (
-  leftarg = money.amount,
-  rightarg = money.amount,
-  function = money.add
-);
-
-create aggregate money.sum(money.amount)
-(
-  sfunc = money.add,
-  stype = money.amount,
-  parallel = safe
-);
+create domain amount as numeric(10, 2) check (value >= 0);
+create domain rate as numeric(6, 5) check (value >= 0);
 
 create table client (
   client text not null primary key,
@@ -117,8 +30,8 @@ using gin (client gin_trgm_ops);
 
 create table product (
   product text not null primary key,
-  unit_price_ht money.amount not null,
-  tva_rate numeric(5, 5) not null
+  unit_price_ht amount not null,
+  tva_rate rate not null
 );
 
 grant all on table product to admin;
@@ -136,7 +49,7 @@ grant all on table bl to admin;
 create table bl_line (
   bl bigint not null references bl (bl) on delete cascade,
   product text not null references product (product) on delete cascade,
-  quantity bigint not null check (quantity > 0),
+  quantity integer not null check (quantity > 0),
   primary key (bl, product)
 );
 
@@ -151,9 +64,9 @@ create table invoice (
   client_address text not null,
   invoiced_at timestamptz not null,
   deadline_at timestamptz not null,
-  total_ht money.amount not null,
-  total_tva money.amount not null,
-  total_ttc money.amount not null,
+  total_ht amount not null,
+  total_tva amount not null,
+  total_ttc amount not null,
   bank_info text not null,
   legal_infos text not null,
   footer text default null,
@@ -170,11 +83,11 @@ create table invoice_line (
   product text not null,
   quantity bigint not null check (quantity > 0),
   shipped_at date not null,
-  unit_price_ht money.amount not null,
-  total_price_ht money.amount not null,
-  tva_rate numeric(5, 5) not null,
-  total_tva money.amount not null,
-  total_price_ttc money.amount not null,
+  unit_price_ht amount not null,
+  total_price_ht amount not null,
+  tva_rate rate not null,
+  total_tva amount not null,
+  total_price_ttc amount not null,
   primary key (invoice, bl, product)
 );
 
@@ -188,7 +101,7 @@ select
   shipped_at,
   product,
   quantity,
-  unit_price_ht,
+  unit_price_ht* 2,
   unit_price_ht * quantity,
   tva_rate,
   (unit_price_ht * quantity) * tva_rate,
@@ -208,7 +121,7 @@ group by 1, 2, 3, 4;
 grant select on future_invoice_line_group to admin;
 
 create view future_invoice(client, month, total_ht, total_tva, total_ttc) as
-select client, date_trunc('month', bl.shipped_at)::date, money.sum(total_price_ht), money.sum(total_tva), money.sum(total_price_ttc)
+select client, date_trunc('month', bl.shipped_at)::date, sum(total_price_ht), sum(total_tva), sum(total_price_ttc)
 from client
 join bl using (client)
 join future_invoice_line using (client)
@@ -241,18 +154,18 @@ returns void as $$
 with next(number) as (
   select
     coalesce(max(increment) + 1, 1)
-  from gieze.invoice
+  from invoice
   where client = client_
   and date_trunc('year', month) = date_trunc('year', month_)
 ),
 new_invoice as (
-  insert into gieze.invoice(increment, invoice, client, address, client_address, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) 
+  insert into invoice(increment, invoice, client, address, client_address, month, invoiced_at, deadline_at, total_ht, total_tva, total_ttc, bank_info, legal_infos) 
   select
     next.number,
     format('%s-%s', to_char(month, 'YY-MM'), to_char(next.number, 'fm000')),
-    (select client from gieze.client where client = fi.client), -- not a FK so check manually
-    (select billing_address from gieze.client where client = fi.client), -- not a FK so check manually
-    (select shipping_address from gieze.client where client = fi.client), -- not a FK so check manually
+    (select client from client where client = fi.client), -- not a FK so check manually
+    (select billing_address from client where client = fi.client), -- not a FK so check manually
+    (select shipping_address from client where client = fi.client), -- not a FK so check manually
     fi.month,
     now(),
     now() + interval '1 month',
@@ -261,22 +174,23 @@ new_invoice as (
     fi.total_ttc,
     'bank info',
     'legal infos'
-  from gieze.future_invoice fi, next
+  from future_invoice fi, next
   where fi.client = client_
   and fi.month = month_
   returning client, month, invoice
 )
-insert into gieze.invoice_line(invoice, bl, shipped_at, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
+insert into invoice_line(invoice, bl, shipped_at, product, quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc)
 select ni.invoice, fil.bl, fil.shipped_at, fil.product, fil.quantity, unit_price_ht, total_price_ht, tva_rate, total_tva, total_price_ttc
 from new_invoice ni
-join gieze.future_invoice_line fil using (client, month);
+join future_invoice_line fil using (client, month);
 
 update bl set invoiced = true
 where date_trunc('month', shipped_at)::date = month_
 and client = client_
 and shipped_at is not null;
 $$ language sql
-set default_transaction_isolation = 'serializable';
+set default_transaction_isolation = 'serializable'
+set search_path from current;
 
 grant execute on function invoice to admin;
 
