@@ -79,6 +79,6 @@
     </div>
     {{/each}}
     </script>
-    <div data-template="invoice" data-fetch="/invoice?select=*,invoice_line_detail(*)&invoice=eq.{{'invoice' | querystring}}"></div>
+    <div data-template="invoice" data-fetch="/invoice?select=*,client(*),invoice_line_detail(*)&invoice=eq.{{'invoice' | querystring}}"></div>
   </body>
 </html>

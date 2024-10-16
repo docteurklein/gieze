@@ -92,7 +92,7 @@
         <div data-fetch="/bl?select=*,bl_line(*)&shipped_at=is.null&order=bl.desc" data-template="bls"></div>
         <hr/>
 
-        <details>
+        <details aria-invalid="{{it.response?.ok ? 'false' : 'true'}}">
         	<summary>BLs livrés</summary>
           <div data-fetch="/bl?select=*,bl_line(*)&shipped_at=not.is.null&order=bl.desc" data-template="bls"></div>
         </details>
@@ -132,7 +132,7 @@
                   },
                 })/}}
 
-                <form data-intercept data-method="DELETE" action="/bl_line?bl=eq.{{line.bl}}&product=eq.{{line.product}}">
+                <form data-intercept data-method="DELETE" action="/bl_line?bl=eq.{{line.bl}}&product=eq.{{line.product}}" data-success="redirect">
                   <fieldset class="grid">
                     <input type="submit" value="X" onclick="return confirm('Effacer?')" />
                   </fieldset>

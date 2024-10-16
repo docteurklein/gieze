@@ -1,10 +1,6 @@
 - make shipped BLs editable
-- client:
-- telephone
-
 - pouvoir effacer une facture au cas ou
 - pouvoir insérer une facture meme si un client existe deja pour ce mois ci
 - auto incr BL num
-
 - print BL
 

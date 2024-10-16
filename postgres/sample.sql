@@ -1,6 +1,6 @@
 begin;
 
-set local search_path to gieze;
+set local search_path to desired_gieze;
 
 truncate client cascade;
 truncate product cascade;
@@ -10,8 +10,8 @@ insert into client values
 ('bio coop', '1 rue de la coop', '1 rue de la coop');
 
 insert into product values
-('grand duc', (3.25, 'EUR')::money.amount, 0.055),
-('crotte de fée', (1.50, 'EUR')::money.amount, 0.055);
+('grand duc', 3.25::amount, 0.055),
+('crotte de fée', 1.50::amount, 0.055);
 
 insert into bl values
 (1, 'maison du sichon', now() - interval '1 month', now()),

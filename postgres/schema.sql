@@ -11,7 +11,7 @@ grant usage on schema desired_gieze to admin;
 
 -- grant admin to app;
 
-set local search_path to desired_gieze, pg_catalog;
+set local search_path to desired_gieze, public, pg_catalog;
 
 create domain amount as numeric(10, 2) check (value >= 0);
 create domain rate as numeric(6, 5) check (value >= 0);
@@ -19,7 +19,8 @@ create domain rate as numeric(6, 5) check (value >= 0);
 create table client (
   client text not null primary key,
   billing_address text not null,
-  shipping_address text default null
+  shipping_address text default null,
+  phone text default null
 );
 
 grant all on table client to admin;
